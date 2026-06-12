@@ -1,0 +1,30 @@
+# @vllnt/convex-flags
+
+> Feature flags as a Convex component - backend-evaluated, reactive kill-switches
+
+`@vllnt/convex-flags` is a publishable Convex component. It targets `convex@^1.36.1`.
+It stores boolean feature flags in its own sandboxed `flags` table, keyed by an
+opaque host-chosen string. Flags are evaluated inside Convex queries, so changes
+stream to connected clients over the same reactive subscription mechanism as app
+data. The host owns auth and gates the management methods. `0.1.0` is the boolean
+core; variants, rollouts, targeting, and React hooks are planned (see the README).
+
+## Docs
+
+- [README](README.md): Project overview, installation, usage examples, architecture
+- [API Reference](docs/API.md): Public class methods, return shapes, input validation
+- [Changelog](CHANGELOG.md): Version history and release notes
+- [Contributing](CONTRIBUTING.md): Development setup, validation commands, release workflow
+
+## Examples
+
+- [Example component wrapper](example/convex/example.ts): Host-app wrapper functions
+- [Example tests](example/convex/example.test.ts): End-to-end usage coverage with `convex-test`
+
+## Optional
+
+- [AGENTS](AGENTS.md): Canonical agent instructions for this repository
+- [Security Policy](SECURITY.md): Vulnerability reporting policy
+- [Code of Conduct](CODE_OF_CONDUCT.md): Community participation guidelines
+- [License](LICENSE)
+- [Full source bundle](llms-full.txt): Aggregated README, changelog, API docs, and key source files

@@ -1,0 +1,83 @@
+{
+  "name": "@vllnt/convex-flags",
+  "version": "0.1.0",
+  "description": "Feature flags as a Convex component - backend-evaluated, reactive kill-switches",
+  "license": "MIT",
+  "type": "module",
+  "packageManager": "pnpm@9.15.4",
+  "files": ["dist", "src"],
+  "exports": {
+    "./package.json": "./package.json",
+    ".": {
+      "types": "./dist/client/index.d.ts",
+      "default": "./dist/client/index.js"
+    },
+    "./test": "./src/test.ts",
+    "./_generated/component.js": {
+      "types": "./dist/component/_generated/component.d.ts"
+    },
+    "./_generated/component": {
+      "types": "./dist/component/_generated/component.d.ts"
+    },
+    "./convex.config": {
+      "types": "./dist/component/convex.config.d.ts",
+      "default": "./dist/component/convex.config.js"
+    },
+    "./convex.config.js": {
+      "types": "./dist/component/convex.config.d.ts",
+      "default": "./dist/component/convex.config.js"
+    }
+  },
+  "types": "./dist/client/index.d.ts",
+  "module": "./dist/client/index.js",
+  "scripts": {
+    "build": "tsc --project ./tsconfig.build.json",
+    "build:codegen": "pnpm convex codegen --component-dir ./src/component && pnpm build",
+    "build:clean": "rm -rf dist *.tsbuildinfo && pnpm build:codegen",
+    "typecheck": "tsc --noEmit",
+    "typecheck:ci": "tsc --noEmit --project tsconfig.ci.json",
+    "lint": "eslint .",
+    "test": "vitest run --passWithNoTests",
+    "test:watch": "vitest --typecheck --clearScreen false",
+    "test:coverage": "vitest run --coverage --coverage.reporter=text",
+    "generate:llms": "node scripts/generate-llms.mjs",
+    "preversion": "pnpm install --frozen-lockfile && pnpm build && pnpm test:coverage && pnpm typecheck && pnpm generate:llms",
+    "prepublishOnly": "npm whoami || npm login",
+    "alpha": "npm version prerelease --preid alpha && npm publish --tag alpha && git push --follow-tags",
+    "release": "npm version patch && npm publish && git push --follow-tags"
+  },
+  "dependencies": {},
+  "peerDependencies": {
+    "convex": "^1.36.1"
+  },
+  "devDependencies": {
+    "@edge-runtime/vm": "^4.0.0",
+    "@vitest/coverage-v8": "^3.0.0",
+    "@vllnt/eslint-config": "^1.0.0",
+    "@vllnt/typescript": "^1.0.0",
+    "convex": "^1.36.1",
+    "convex-test": "^0.0.50",
+    "eslint": "^9.0.0",
+    "prettier": "^3.4.0",
+    "typescript": "^5.7.0",
+    "vite": "^7.3.5",
+    "vitest": "^3.0.0"
+  },
+  "homepage": "https://github.com/vllnt/convex-flags#readme",
+  "bugs": {
+    "url": "https://github.com/vllnt/convex-flags/issues"
+  },
+  "author": "bntvllnt",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/vllnt/convex-flags"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "sideEffects": false,
+  "keywords": ["convex", "convex-component", "flags"]
+}

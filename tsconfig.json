@@ -1,0 +1,14 @@
+{
+  "extends": "@vllnt/typescript/node-library.json",
+  "compilerOptions": {
+    "lib": ["ES2024", "DOM"],
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "outDir": "dist",
+    "rootDir": "src",
+    "skipLibCheck": true
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist"]
+}
