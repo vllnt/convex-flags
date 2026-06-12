@@ -21,8 +21,10 @@ jobs:
       - name: Check commit author/committer emails
         run: |
           set -euo pipefail
-          BASE="origin/${{ github.event.pull_request.base.ref }}"
-          RANGE="$BASE...HEAD"
+          # Validate only the PR's own commits. On a pull_request build HEAD is
+          # GitHub's synthetic merge commit (committed as noreply@github.com); the
+          # base.sha..head.sha range excludes it and checks just the pushed commits.
+          RANGE="${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}"
           emails=$(git log --format='%ae%n%ce' "$RANGE" | sort -u)
           echo "Emails in range $RANGE:"
           echo "$emails" | sed 's/^/  /'
