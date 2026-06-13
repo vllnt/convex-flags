@@ -67,7 +67,8 @@
   "bugs": {
     "url": "https://github.com/vllnt/convex-flags/issues"
   },
-  "author": "bntvllnt",
+  "author": { "name": "bntvllnt", "url": "https://bntvllnt.com" },
+  "funding": { "type": "github", "url": "https://github.com/sponsors/bntvllnt" },
   "repository": {
     "type": "git",
     "url": "https://github.com/vllnt/convex-flags"

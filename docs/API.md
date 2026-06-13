@@ -1,5 +1,7 @@
 # API Reference — @vllnt/convex-flags
 
+**Compatibility:** `convex@^1.36.1`
+
 The public surface is the `Flags` client class (`src/client/index.ts`). Construct it once
 with the mounted component reference, then call its methods from host
 queries/mutations/actions. The host owns auth — gate the management methods (`define`,
@@ -12,7 +14,7 @@ import { components } from "./_generated/api";
 const flags = new Flags(components.flags);
 ```
 
-## Methods
+## Mutations
 
 | Method | Args | Returns | Notes |
 |--------|------|---------|-------|
@@ -20,13 +22,18 @@ const flags = new Flags(components.flags);
 | `enable(ctx, key)` | `string` | `Promise<null>` | Set the flag's value to `true`. Throws `FLAG_NOT_FOUND` if undefined. |
 | `disable(ctx, key)` | `string` | `Promise<null>` | Set the flag's value to `false`. Throws `FLAG_NOT_FOUND` if undefined. |
 | `remove(ctx, key)` | `string` | `Promise<null>` | Permanently delete a flag. Throws `FLAG_NOT_FOUND` if undefined. |
+
+## Queries
+
+| Method | Args | Returns | Notes |
+|--------|------|---------|-------|
 | `get(ctx, key)` | `string` | `Promise<FlagDoc \| null>` | Fetch a single flag definition, or `null`. |
 | `list(ctx)` | — | `Promise<FlagDoc[]>` | Every flag definition. |
 | `evaluate(ctx, key)` | `string` | `Promise<FlagEvaluation>` | `{ value, reason }`. `reason` is `"flag"` when defined, `"unknown"` when not. |
 | `isEnabled(ctx, key)` | `string` | `Promise<boolean>` | The boolean value only; `false` for an undefined key. |
 | `all(ctx)` | — | `Promise<Record<string, FlagEvaluation>>` | Evaluate every flag — the bootstrap payload for a reactive client subscription. |
 
-### Types
+## Types
 
 ```ts
 interface FlagDoc {
@@ -44,6 +51,12 @@ interface FlagEvaluation {
   reason: "flag" | "unknown";
 }
 ```
+
+## Error codes
+
+| Code | Thrown by | Condition |
+|------|-----------|-----------|
+| `FLAG_NOT_FOUND` | `enable`, `disable`, `remove` | The flag key does not exist in the component's table |
 
 ## Roadmap
 
