@@ -31,7 +31,7 @@ Examples of unacceptable behavior:
 
 Instances of abusive, harassing, or otherwise unacceptable behavior may be
 reported to the project maintainer via
-[Discord](https://bntvllnt.com/discord) or [bntvllnt.com](https://bntvllnt.com).
+[bntvllnt.com](https://bntvllnt.com).
 
 All complaints will be reviewed and investigated promptly and fairly.
 
