@@ -49,7 +49,7 @@ jobs:
   canary:
     name: Publish Canary
     needs: quality
-    if: github.event_name == 'push'
+    if: github.event_name == 'push' && vars.CANARY_ENABLED == 'true'
     runs-on: ubuntu-latest
     permissions:
       id-token: write
