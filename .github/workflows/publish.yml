@@ -69,31 +69,15 @@ jobs:
           sed -i '/_authToken/d' "$NPM_CONFIG_USERCONFIG"
           unset NODE_AUTH_TOKEN
 
-          PKG=$(node -p "require('./package.json').name")
           BASE_VERSION=$(node -p "require('./package.json').version")
           SHORT_SHA=$(echo "$GITHUB_SHA" | cut -c1-7)
           CANARY_VERSION="${BASE_VERSION}-canary.${SHORT_SHA}"
           npm version "$CANARY_VERSION" --no-git-tag-version --ignore-scripts
-
-          # Canary dist-tags (mode-aware). OIDC is publish-only, so a follow-up `dist-tag add`
-          # may fail — `@latest` correctness is guaranteed; advancing `@canary` is best-effort.
-          # - No stable `latest` yet (unpublished, or current `latest` is a pre-release) -> publish
-          #   AS `latest` so a bare `npm i` always resolves the NEWEST canary; best-effort tag `@canary`.
-          # - A stable `latest` exists -> publish under `canary` only; never clobber stable `latest`.
-          CURRENT_LATEST=$(npm view "${PKG}@latest" version 2>/dev/null || echo "")
-          case "$CURRENT_LATEST" in
-            "" | *-*)
-              npx -y npm@11 publish --tag latest --provenance --access public --ignore-scripts
-              if npx -y npm@11 dist-tag add "${PKG}@${CANARY_VERSION}" canary; then
-                echo "::notice title=canary tag::@canary advanced to ${CANARY_VERSION}"
-              else
-                echo "::warning title=canary tag::dist-tag failed — @canary needs a granular NPM_TOKEN (OIDC is publish-only); @latest is current"
-              fi
-              ;;
-            *)
-              npx -y npm@11 publish --tag canary --provenance --access public --ignore-scripts
-              ;;
-          esac
+          # Roll the @canary channel via OIDC (no token). One OIDC publish sets exactly one
+          # dist-tag; advancing a 2nd (e.g. @latest) would need a token — the dist-tag PUT
+          # returns 401 under OIDC — so @latest is left untouched. Install the newest canary
+          # with `npm i <pkg>@canary`.
+          npx -y npm@11 publish --tag canary --provenance --access public --ignore-scripts
 
   release:
     name: Publish Release
