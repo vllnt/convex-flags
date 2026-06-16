@@ -69,7 +69,14 @@ jobs:
           sed -i '/_authToken/d' "$NPM_CONFIG_USERCONFIG"
           unset NODE_AUTH_TOKEN
 
+          PKG=$(node -p "require('./package.json').name")
           BASE_VERSION=$(node -p "require('./package.json').version")
+          # If package.json's version is already a PUBLISHED stable, this canary is work toward the
+          # NEXT version — bump the patch so the canary sorts ABOVE the release (else BASE-canary.X
+          # ranks below the published BASE). Unreleased versions (the 0.1.0 hold) are left as-is.
+          if [ -n "$(npm view "${PKG}@${BASE_VERSION}" version 2>/dev/null || true)" ]; then
+            BASE_VERSION=$(node -e "const v=require('./package.json').version.split('.').map(Number); console.log(v[0]+'.'+v[1]+'.'+(v[2]+1))")
+          fi
           SHORT_SHA=$(echo "$GITHUB_SHA" | cut -c1-7)
           CANARY_VERSION="${BASE_VERSION}-canary.${SHORT_SHA}"
           npm version "$CANARY_VERSION" --no-git-tag-version --ignore-scripts
