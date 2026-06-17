@@ -3,7 +3,7 @@
 > Feature flags as a Convex component: backend-evaluated, reactive, and streamed to every
 > connected client with no redeploy and no third-party flag SaaS.
 
-**Now:** _between phases — the v0.2 targeting engine shipped; deferred follow-ups are in Later_
+**Now:** docs-ergonomics
 **Last updated:** 2026-06-17
 
 ## boolean-core [DONE 2026-06]
@@ -80,8 +80,22 @@ can be forced and cleared. — met.
 - [-] flag-lifecycle.2 lastEvaluatedAt stale detection — dropped: a reactive read-only query can't write on eval, 2026-06-17 (architectural)
 - [-] flag-lifecycle.4 Change-history/audit — deferred: compose `@vllnt/convex-events` rather than own a table, 2026-06-17 (Later)
 
+## docs-ergonomics [PLANNED]
+
+**Goal:** Close the first-time-developer onboarding gaps surfaced by the 2026-06-17 review — the
+engine is complete and tested; this phase is docs + ergonomic polish, not new capability.
+**Exit criteria:** a newcomer can wire reads/writes + the React hooks from the README alone, and
+cannot silently wipe a flag's targeting by re-`define`-ing it.
+
+- [ ] docs-ergonomics.1 Add a complete copy-paste `convex/flags.ts` host-wrappers module to the README and point the React example's `api.flags.evaluate` at it (today the React snippet references a ref the docs never tell you to create — the #1 first-run blocker)
+- [ ] docs-ergonomics.2 Document `define` as a full-replace upsert + add a partial-update path (`setRollout`/`setRules`/`update`) so flipping a value can't silently clear `rules`/`rollout`/`variants`
+- [ ] docs-ergonomics.3 Refresh the stale "kill-switches" tagline in `package.json` description, the `llms.txt` blockquote, and the GitHub/npm repo description (the component is now a full targeting engine)
+- [ ] docs-ergonomics.4 Guard or document `enable`/`disable` as boolean-only (today they coerce a string/number flag's value to a boolean)
+
 ## Later
 
+- Variant enforcement — reject a `value` / rule / rollout value that is not among a flag's declared `variants` (catch typos at write time).
+- Version / semver targeting operator — beyond the raw numeric `gt`/`gte`/`lt`/`lte`.
 - Named reusable segments (targeting.2) — once a real consumer needs shared targeting groups.
 - JSON-object variant values (variants.4) — the documented last resort, when a consumer needs it.
 - Audit / change history (flag-lifecycle.4) — emit change events to compose `@vllnt/convex-events`.
