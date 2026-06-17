@@ -14,6 +14,7 @@ export default defineConfig({
       include: [
         "src/shared.ts",
         "src/client/index.ts",
+        "src/react/index.ts",
         "src/component/mutations.ts",
         "src/component/queries.ts",
         "src/component/validators.ts",

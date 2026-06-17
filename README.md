@@ -6,24 +6,25 @@
 
 # @vllnt/convex-flags
 
-Feature flags as a Convex component — boolean kill-switches evaluated on the backend and streamed to every connected client in real time, no redeploy and no third-party flag SaaS.
+Feature flags as a Convex component — backend-evaluated and streamed to every connected client in real time: boolean kill-switches, multivariate variants, percentage rollouts, attribute targeting, and per-subject overrides, with no redeploy and no third-party flag SaaS.
 
 ```ts
 const flags = new Flags(components.flags);
+await flags.define(ctx, { key: "new-checkout", value: false });
 await flags.enable(ctx, "new-checkout");
-const enabled = await flags.isEnabled(ctx, "new-checkout"); // reactive in a query
+const on = await flags.isEnabled(ctx, "new-checkout", { subjectRef: userId }); // reactive in a query
 ```
 
 ## Features
 
-- **Boolean kill-switches** — backend-evaluated, reactive, streamed to clients.
-- **Data isolation** — definitions live in the component's own sandboxed `flags` table; no blast radius into your schema.
-- **Reuse** — mount into any Convex backend with one `app.use()`.
-- **Real-time** — flag changes propagate through the same subscription mechanism as your app data.
-- **Dual-target** — runs unchanged on Convex Cloud and self-hosted `convex-backend`.
-- **Auth-agnostic** — domain- and auth-neutral; the host gates every management call.
-
-> **Planned (post-0.1.0):** multivariate variants, percentage rollouts, attribute targeting, per-environment rules, and React hooks. Agents must not implement these without an explicit instruction.
+- **Boolean, multivariate & rollouts** — boolean kill-switches, string/number variants, and weighted percentage rollouts with stable per-subject bucketing.
+- **Attribute targeting** — ordered rules (`eq`, `in`, `contains`, `gt`, …) over a host-supplied typed context.
+- **Per-subject overrides** — force any flag's value for one subject.
+- **Lifecycle** — archive (reversible) distinct from permanent delete.
+- **Real-time** — evaluated in Convex queries, so changes stream to clients over the same reactive subscriptions as your app data.
+- **Data isolation** — definitions and overrides live in the component's own sandboxed tables; no blast radius into your schema.
+- **Reactive React hooks** — optional `./react` entry (`useFlag`/`useFlags`); backend-only consumers pull in zero React.
+- **Auth-agnostic & dual-target** — the host gates every management call; runs unchanged on Convex Cloud and self-hosted `convex-backend`.
 
 ## Installation
 
@@ -42,7 +43,7 @@ app.use(flags);
 export default app;
 ```
 
-Peer dependency: `convex@^1.41.0`.
+Peer dependency: `convex@^1.36.1`. `react` is an optional peer dependency, needed only for the `./react` entry.
 
 ## Usage
 
@@ -60,15 +61,20 @@ export const flags = new Flags(components.flags);
 import { query } from "./_generated/server";
 import { flags } from "./flags";
 
+// A targeted rollout: pro users get the new checkout; everyone else is a 50/50 split.
 export const setup = async (ctx) => {
-  await flags.define(ctx, { key: "new-checkout", value: false, description: "Rebuilt checkout" });
-  await flags.enable(ctx, "new-checkout");  // or flags.disable(ctx, key)
+  await flags.define(ctx, {
+    key: "new-checkout",
+    value: false,
+    rules: [{ conditions: [{ attribute: "plan", op: "eq", values: ["pro"] }], value: true }],
+    rollout: { splits: [{ value: true, weight: 50 }, { value: false, weight: 50 }] },
+  });
 };
 
 export const checkout = query({
   args: {},
   handler: async (ctx) =>
-    (await flags.isEnabled(ctx, "new-checkout"))
+    (await flags.isEnabled(ctx, "new-checkout", { subjectRef: "user-123", attributes: { plan: "free" } }))
       ? loadNewCheckout(ctx)
       : loadLegacyCheckout(ctx),
 });
@@ -78,16 +84,37 @@ export const checkout = query({
 
 | Method | Kind | Result |
 |--------|------|--------|
-| `isEnabled(ctx, key)` | query | `boolean` (`false` for undefined keys) |
-| `evaluate(ctx, key)` | query | `FlagEvaluation` (`value` + `reason`) |
-| `get(ctx, key)` | query | `FlagDoc \| null` |
-| `list(ctx)` | query | `FlagDoc[]` |
-| `all(ctx)` | query | `Record<string, FlagEvaluation>` (reactive bootstrap) |
-| `define(ctx, definition)` | mutation | Create or update a flag (host gates access) |
-| `enable(ctx, key)` / `disable(ctx, key)` | mutation | Set the flag value |
-| `remove(ctx, key)` | mutation | Hard-delete a flag |
+| `isEnabled(ctx, key, context?)` | query | `boolean` (value `=== true`) |
+| `evaluate(ctx, key, options?)` | query | `FlagEvaluation` (`value` + `reason`) |
+| `variant(ctx, key, options?)` | query | the resolved value |
+| `get(ctx, key)` / `list(ctx)` | query | `FlagDoc \| null` / `FlagDoc[]` |
+| `all(ctx, context?)` | query | `Record<string, FlagEvaluation>` (reactive bootstrap) |
+| `define(ctx, definition)` | mutation | Create or replace a flag (value, variants, rules, rollout) |
+| `enable(ctx, key)` / `disable(ctx, key)` | mutation | Toggle a boolean flag |
+| `archive(ctx, key)` / `restore(ctx, key)` | mutation | Reversibly retire / re-activate a flag |
+| `setOverride(ctx, key, subjectRef, value)` / `clearOverride(ctx, key, subjectRef)` | mutation | Force / clear a per-subject value |
+| `remove(ctx, key)` | mutation | Hard-delete a flag and its overrides |
 
-Full reference: [docs/API.md](docs/API.md).
+`evaluate` resolves in order: override → archived → targeting rules → fallthrough rollout → flag
+value; an unknown key serves the caller `default` or `false`. Full reference, types, operators, and
+the React hooks: [docs/API.md](docs/API.md).
+
+## React
+
+Optional reactive hooks via the `./react` entry (`react` is an optional peer dependency):
+
+```tsx
+import { useFlag } from "@vllnt/convex-flags/react";
+import { api } from "../convex/_generated/api";
+
+const checkout = useFlag(api.flags.evaluate, "new-checkout", { context: { subjectRef: userId } });
+if (checkout?.value === true) { /* render the new checkout */ }
+```
+
+| Hook | Returns |
+|------|---------|
+| `useFlag(query, key, options?)` | `FlagEvaluation \| undefined` |
+| `useFlags(query, context?)` | `Record<string, FlagEvaluation> \| undefined` |
 
 ## Security
 

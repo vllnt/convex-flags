@@ -1,4 +1,12 @@
-import type { EvalReason, FlagEvaluation } from "../shared.js";
+import type {
+  EvalContext,
+  EvalReason,
+  FlagEvaluation,
+  Rollout,
+  Rule,
+  Variant,
+  VariantValue,
+} from "../shared.js";
 
 /** A flag document as returned by the component queries. */
 export interface FlagDoc {
@@ -6,7 +14,11 @@ export interface FlagDoc {
   _creationTime: number;
   key: string;
   description?: string;
-  value: boolean;
+  value: VariantValue;
+  variants?: Variant[];
+  rules?: Rule[];
+  rollout?: Rollout;
+  status: "active" | "archived";
   createdAt: number;
   updatedAt: number;
 }
@@ -14,8 +26,27 @@ export interface FlagDoc {
 /** A flag definition passed to {@link Flags.define}. */
 export interface FlagDefinition {
   key: string;
-  value: boolean;
+  value: VariantValue;
   description?: string;
+  variants?: Variant[];
+  rules?: Rule[];
+  rollout?: Rollout;
 }
 
-export type { EvalReason, FlagEvaluation };
+/** Options for {@link Flags.evaluate} / {@link Flags.variant}. */
+export interface EvalOptions {
+  /** Host-supplied targeting/bucketing context. */
+  context?: EvalContext;
+  /** Value to serve when the key is unknown (reason `default`). */
+  default?: VariantValue;
+}
+
+export type {
+  EvalContext,
+  EvalReason,
+  FlagEvaluation,
+  Rollout,
+  Rule,
+  Variant,
+  VariantValue,
+};

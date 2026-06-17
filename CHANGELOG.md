@@ -6,7 +6,33 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
-_Nothing yet._
+### Added
+
+- **Multivariate variants** — a flag value is now a typed primitive (`boolean | string | number`);
+  `define` accepts `variants` metadata. Added `variant(ctx, key, options?)` returning just the value.
+- **Attribute targeting** — `define` accepts ordered `rules` (`{ conditions, value | rollout }`) with
+  operators `eq`, `neq`, `in`, `nin`, `contains`, `gt`, `gte`, `lt`, `lte`. First matching rule wins;
+  conditions within a rule AND together; an empty condition list is a catch-all.
+- **Percentage rollouts** — `define` accepts a `rollout` of weighted `splits`, bucketed
+  deterministically (FNV-1a) by `context.subjectRef` or a named `by` attribute, so a subject always
+  resolves to the same value.
+- **Evaluation context** — `evaluate` / `isEnabled` / `all` / `variant` take an optional host-supplied
+  `EvalContext` (`{ subjectRef?, attributes? }`); `evaluate` takes an optional `default` for unknown keys.
+- **Per-subject overrides** — `setOverride(key, subjectRef, value)` / `clearOverride(key, subjectRef)`;
+  an override wins over targeting in `evaluate` and `all`.
+- **Lifecycle** — `archive(key)` (reversible; serves the base value with reason `disabled`) and
+  `restore(key)`, distinct from `remove` (which now also deletes a flag's overrides).
+- **React** — optional `@vllnt/convex-flags/react` entry exporting `useFlag` / `useFlags`; `react` is
+  an optional peer dependency.
+- New evaluation reason codes: `rule`, `rollout`, `override`, `disabled`, `default` (alongside
+  `flag`, `unknown`).
+
+### Notes
+
+- Backward compatible: the boolean kill-switch API (`define({ key, value })`, `enable`/`disable`,
+  `isEnabled(key)`, `evaluate(key)`, `get`/`list`/`all`/`remove`) is unchanged.
+- Deferred: named reusable segments, JSON-object variant values, scheduled/progressive rollouts,
+  stale-flag detection, and audit-event emission — see `ROADMAP.md`.
 
 ## [0.1.0] - 2026-06-12
 

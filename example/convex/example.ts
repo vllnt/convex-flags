@@ -2,6 +2,14 @@ import { v } from "convex/values";
 import { components } from "./_generated/api.js";
 import { mutation, query } from "./_generated/server.js";
 import { Flags } from "../../src/client/index.js";
+import {
+  evalContext,
+  evaluation,
+  rollout,
+  rule,
+  variant,
+  variantValue,
+} from "../../src/component/validators.js";
 
 /**
  * Host-app wrappers. The host owns auth: in a real app you would resolve and
@@ -12,8 +20,11 @@ const flags = new Flags(components.flags);
 export const define = mutation({
   args: {
     key: v.string(),
-    value: v.boolean(),
+    value: variantValue,
     description: v.optional(v.string()),
+    variants: v.optional(v.array(variant)),
+    rules: v.optional(v.array(rule)),
+    rollout: v.optional(rollout),
   },
   returns: v.string(),
   handler: (ctx, args) => flags.define(ctx, args),
@@ -31,10 +42,35 @@ export const disable = mutation({
   handler: (ctx, args) => flags.disable(ctx, args.key),
 });
 
+export const archive = mutation({
+  args: { key: v.string() },
+  returns: v.null(),
+  handler: (ctx, args) => flags.archive(ctx, args.key),
+});
+
+export const restore = mutation({
+  args: { key: v.string() },
+  returns: v.null(),
+  handler: (ctx, args) => flags.restore(ctx, args.key),
+});
+
 export const remove = mutation({
   args: { key: v.string() },
   returns: v.null(),
   handler: (ctx, args) => flags.remove(ctx, args.key),
+});
+
+export const setOverride = mutation({
+  args: { key: v.string(), subjectRef: v.string(), value: variantValue },
+  returns: v.null(),
+  handler: (ctx, args) =>
+    flags.setOverride(ctx, args.key, args.subjectRef, args.value),
+});
+
+export const clearOverride = mutation({
+  args: { key: v.string(), subjectRef: v.string() },
+  returns: v.null(),
+  handler: (ctx, args) => flags.clearOverride(ctx, args.key, args.subjectRef),
 });
 
 export const get = query({
@@ -50,19 +86,33 @@ export const list = query({
 });
 
 export const evaluate = query({
-  args: { key: v.string() },
-  returns: v.object({ value: v.boolean(), reason: v.string() }),
-  handler: (ctx, args) => flags.evaluate(ctx, args.key),
+  args: {
+    key: v.string(),
+    context: v.optional(evalContext),
+    default: v.optional(variantValue),
+  },
+  returns: evaluation,
+  handler: (ctx, args) =>
+    flags.evaluate(ctx, args.key, {
+      context: args.context,
+      default: args.default,
+    }),
+});
+
+export const variantOf = query({
+  args: { key: v.string(), context: v.optional(evalContext) },
+  returns: variantValue,
+  handler: (ctx, args) => flags.variant(ctx, args.key, { context: args.context }),
 });
 
 export const isEnabled = query({
-  args: { key: v.string() },
+  args: { key: v.string(), context: v.optional(evalContext) },
   returns: v.boolean(),
-  handler: (ctx, args) => flags.isEnabled(ctx, args.key),
+  handler: (ctx, args) => flags.isEnabled(ctx, args.key, args.context),
 });
 
 export const all = query({
-  args: {},
-  returns: v.record(v.string(), v.object({ value: v.boolean(), reason: v.string() })),
-  handler: (ctx) => flags.all(ctx),
+  args: { context: v.optional(evalContext) },
+  returns: v.record(v.string(), evaluation),
+  handler: (ctx, args) => flags.all(ctx, args.context),
 });

@@ -2,23 +2,33 @@ import { v } from "convex/values";
 import { mutation } from "./_generated/server.js";
 import type { Doc } from "./_generated/dataModel.js";
 import type { MutationCtx } from "./_generated/server.js";
+import { rollout, rule, variant, variantValue } from "./validators.js";
 
-async function findByKey(
-  ctx: MutationCtx,
-  key: string,
-): Promise<Doc<"flags"> | null> {
+async function findByKey(ctx: MutationCtx, key: string): Promise<Doc<"flags"> | null> {
   return await ctx.db
     .query("flags")
     .withIndex("by_key", (q) => q.eq("key", key))
     .unique();
 }
 
-/** Create a flag, or update its value/description if the key already exists. */
+/** Throws the component's single code-tagged error. Returns `never` so callers
+ * narrow the flag to non-null after the guard. */
+function flagNotFound(): never {
+  throw new Error("FLAG_NOT_FOUND");
+}
+
+/**
+ * Create a flag, or fully replace its definition if the key already exists
+ * (value, description, variants, rules, rollout). Status is preserved on update.
+ */
 export const define = mutation({
   args: {
     key: v.string(),
-    value: v.boolean(),
+    value: variantValue,
     description: v.optional(v.string()),
+    variants: v.optional(v.array(variant)),
+    rules: v.optional(v.array(rule)),
+    rollout: v.optional(rollout),
   },
   returns: v.id("flags"),
   handler: async (ctx, args) => {
@@ -28,6 +38,9 @@ export const define = mutation({
       await ctx.db.patch(existing._id, {
         value: args.value,
         description: args.description,
+        variants: args.variants,
+        rules: args.rules,
+        rollout: args.rollout,
         updatedAt: now,
       });
       return existing._id;
@@ -36,25 +49,25 @@ export const define = mutation({
       key: args.key,
       value: args.value,
       description: args.description,
+      variants: args.variants,
+      rules: args.rules,
+      rollout: args.rollout,
+      status: "active",
       createdAt: now,
       updatedAt: now,
     });
   },
 });
 
-async function setValue(
-  ctx: MutationCtx,
-  key: string,
-  value: boolean,
-): Promise<void> {
+async function setValue(ctx: MutationCtx, key: string, value: boolean): Promise<void> {
   const flag = await findByKey(ctx, key);
   if (flag === null) {
-    throw new Error("FLAG_NOT_FOUND");
+    flagNotFound();
   }
   await ctx.db.patch(flag._id, { value, updatedAt: Date.now() });
 }
 
-/** Turn a flag on (set its value to `true`). */
+/** Turn a boolean flag on (set its value to `true`). */
 export const enable = mutation({
   args: { key: v.string() },
   returns: v.null(),
@@ -64,7 +77,7 @@ export const enable = mutation({
   },
 });
 
-/** Turn a flag off (set its value to `false`). */
+/** Turn a boolean flag off (set its value to `false`). */
 export const disable = mutation({
   args: { key: v.string() },
   returns: v.null(),
@@ -74,16 +87,103 @@ export const disable = mutation({
   },
 });
 
-/** Permanently delete a flag. */
+async function setStatus(
+  ctx: MutationCtx,
+  key: string,
+  status: "active" | "archived",
+): Promise<void> {
+  const flag = await findByKey(ctx, key);
+  if (flag === null) {
+    flagNotFound();
+  }
+  await ctx.db.patch(flag._id, { status, updatedAt: Date.now() });
+}
+
+/** Archive a flag: reversible retirement. Evaluation skips targeting and serves
+ * the flag's base value with reason `disabled`. */
+export const archive = mutation({
+  args: { key: v.string() },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    await setStatus(ctx, args.key, "archived");
+    return null;
+  },
+});
+
+/** Restore an archived flag to active. */
+export const restore = mutation({
+  args: { key: v.string() },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    await setStatus(ctx, args.key, "active");
+    return null;
+  },
+});
+
+/** Permanently delete a flag and any per-subject overrides it owns. */
 export const remove = mutation({
   args: { key: v.string() },
   returns: v.null(),
   handler: async (ctx, args) => {
     const flag = await findByKey(ctx, args.key);
     if (flag === null) {
-      throw new Error("FLAG_NOT_FOUND");
+      flagNotFound();
+    }
+    const overrides = await ctx.db
+      .query("overrides")
+      .withIndex("by_key_subject", (q) => q.eq("key", args.key))
+      .collect();
+    for (const override of overrides) {
+      await ctx.db.delete(override._id);
     }
     await ctx.db.delete(flag._id);
+    return null;
+  },
+});
+
+/** Force a flag's value for one subject. The flag must exist. */
+export const setOverride = mutation({
+  args: { key: v.string(), subjectRef: v.string(), value: variantValue },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const flag = await findByKey(ctx, args.key);
+    if (flag === null) {
+      flagNotFound();
+    }
+    const existing = await ctx.db
+      .query("overrides")
+      .withIndex("by_key_subject", (q) =>
+        q.eq("key", args.key).eq("subjectRef", args.subjectRef),
+      )
+      .unique();
+    if (existing !== null) {
+      await ctx.db.patch(existing._id, { value: args.value });
+    } else {
+      await ctx.db.insert("overrides", {
+        key: args.key,
+        subjectRef: args.subjectRef,
+        value: args.value,
+        createdAt: Date.now(),
+      });
+    }
+    return null;
+  },
+});
+
+/** Clear a subject's override for a flag. No-op if none exists. */
+export const clearOverride = mutation({
+  args: { key: v.string(), subjectRef: v.string() },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const existing = await ctx.db
+      .query("overrides")
+      .withIndex("by_key_subject", (q) =>
+        q.eq("key", args.key).eq("subjectRef", args.subjectRef),
+      )
+      .unique();
+    if (existing !== null) {
+      await ctx.db.delete(existing._id);
+    }
     return null;
   },
 });

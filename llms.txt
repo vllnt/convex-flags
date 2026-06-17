@@ -3,11 +3,13 @@
 > Feature flags as a Convex component - backend-evaluated, reactive kill-switches
 
 `@vllnt/convex-flags` is a publishable Convex component targeting `convex@^1.36.1`.
-It stores boolean feature flags in its own sandboxed `flags` table, keyed by an
-opaque host-chosen string. Flags are evaluated inside Convex queries, so changes
-stream to connected clients over the same reactive subscription mechanism as app
-data. The host owns auth and gates every management call. `0.1.0` is the boolean
-core; variants, rollouts, targeting, and React hooks are planned (see the README).
+It stores feature flags in its own sandboxed tables, keyed by an opaque host-chosen
+string. A flag value is a typed primitive (`boolean | string | number`) and supports
+attribute-targeting rules, weighted percentage rollouts with stable per-subject
+bucketing, per-subject overrides, and reversible archiving. Flags are evaluated inside
+Convex queries, so changes stream to connected clients over the same reactive
+subscription mechanism as app data. The host owns auth and gates every management call.
+An optional `./react` entry ships `useFlag`/`useFlags` hooks; `react` is an optional peer.
 
 ## Docs
 

@@ -5,7 +5,8 @@
 The public surface is the `Flags` client class (`src/client/index.ts`). Construct it once
 with the mounted component reference, then call its methods from host
 queries/mutations/actions. The host owns auth — gate the management methods (`define`,
-`enable`, `disable`, `remove`) behind your own authorized mutations.
+`enable`, `disable`, `archive`, `restore`, `remove`, `setOverride`, `clearOverride`) behind
+your own authorized mutations.
 
 ```ts
 import { Flags } from "@vllnt/convex-flags";
@@ -14,14 +15,21 @@ import { components } from "./_generated/api";
 const flags = new Flags(components.flags);
 ```
 
+A flag value is a typed primitive: `boolean | string | number` (the `VariantValue` type). A
+boolean flag is the two-variant case; string/number flags are multivariate.
+
 ## Mutations
 
 | Method | Args | Returns | Notes |
 |--------|------|---------|-------|
-| `define(ctx, definition)` | `{ key, value, description? }` | `Promise<string>` | Create a flag, or update its `value`/`description` if the key exists. Returns the flag id. |
-| `enable(ctx, key)` | `string` | `Promise<null>` | Set the flag's value to `true`. Throws `FLAG_NOT_FOUND` if undefined. |
-| `disable(ctx, key)` | `string` | `Promise<null>` | Set the flag's value to `false`. Throws `FLAG_NOT_FOUND` if undefined. |
-| `remove(ctx, key)` | `string` | `Promise<null>` | Permanently delete a flag. Throws `FLAG_NOT_FOUND` if undefined. |
+| `define(ctx, definition)` | `FlagDefinition` | `Promise<string>` | Create a flag, or replace its definition (value, description, variants, rules, rollout) if the key exists. Status is preserved on update. Returns the flag id. |
+| `enable(ctx, key)` | `string` | `Promise<null>` | Set a boolean flag's value to `true`. Throws `FLAG_NOT_FOUND`. |
+| `disable(ctx, key)` | `string` | `Promise<null>` | Set a boolean flag's value to `false`. Throws `FLAG_NOT_FOUND`. |
+| `archive(ctx, key)` | `string` | `Promise<null>` | Reversibly retire a flag. Evaluation skips targeting and serves the base value with reason `disabled`. Throws `FLAG_NOT_FOUND`. |
+| `restore(ctx, key)` | `string` | `Promise<null>` | Return an archived flag to active. Throws `FLAG_NOT_FOUND`. |
+| `remove(ctx, key)` | `string` | `Promise<null>` | Permanently delete a flag and its overrides. Throws `FLAG_NOT_FOUND`. |
+| `setOverride(ctx, key, subjectRef, value)` | `string, string, VariantValue` | `Promise<null>` | Force a flag's value for one subject. Throws `FLAG_NOT_FOUND`. |
+| `clearOverride(ctx, key, subjectRef)` | `string, string` | `Promise<null>` | Remove a subject's override. No-op if none exists. |
 
 ## Queries
 
@@ -29,26 +37,120 @@ const flags = new Flags(components.flags);
 |--------|------|---------|-------|
 | `get(ctx, key)` | `string` | `Promise<FlagDoc \| null>` | Fetch a single flag definition, or `null`. |
 | `list(ctx)` | — | `Promise<FlagDoc[]>` | Every flag definition. |
-| `evaluate(ctx, key)` | `string` | `Promise<FlagEvaluation>` | `{ value, reason }`. `reason` is `"flag"` when defined, `"unknown"` when not. |
-| `isEnabled(ctx, key)` | `string` | `Promise<boolean>` | The boolean value only; `false` for an undefined key. |
-| `all(ctx)` | — | `Promise<Record<string, FlagEvaluation>>` | Evaluate every flag — the bootstrap payload for a reactive client subscription. |
+| `evaluate(ctx, key, options?)` | `string, EvalOptions?` | `Promise<FlagEvaluation>` | Resolve a flag against optional context. |
+| `variant(ctx, key, options?)` | `string, EvalOptions?` | `Promise<VariantValue>` | Like `evaluate`, returning just the value. |
+| `isEnabled(ctx, key, context?)` | `string, EvalContext?` | `Promise<boolean>` | `true` when the evaluated value is exactly `true`; `false` otherwise (including unknown keys). |
+| `all(ctx, context?)` | `EvalContext?` | `Promise<Record<string, FlagEvaluation>>` | Evaluate every flag against the same context — the bootstrap payload for a reactive client. |
+
+## Evaluation order
+
+`evaluate` resolves a flag in this order; the first that applies wins:
+
+1. **Override** — a per-subject override for `context.subjectRef` (reason `override`).
+2. **Archived** — an archived flag serves its base value (reason `disabled`); targeting is skipped.
+3. **Rules** — targeting rules in order; the first whose conditions all match serves its `value`
+   (reason `rule`) or its `rollout` (reason `rollout`).
+4. **Fallthrough rollout** — when no rule matched (reason `rollout`).
+5. **Flag value** — the base value (reason `flag`).
+
+An **unknown key** returns the caller `default` (reason `default`) or `false` (reason `unknown`).
+A rollout that cannot bucket (no `subjectRef`/`by` attribute, or no positive-weight split) falls
+through to the flag value.
+
+## Targeting operators
+
+A condition is `{ attribute, op, values }`. A missing attribute never matches.
+
+| Op | Holds when |
+|----|------------|
+| `eq` / `neq` | attribute equals / does not equal `values[0]` |
+| `in` / `nin` | attribute is / is not in `values` |
+| `contains` | string attribute contains the string `values[0]` |
+| `gt` / `gte` / `lt` / `lte` | numeric attribute compares against the number `values[0]` |
+
+## Rollouts
+
+A rollout distributes across weighted splits, bucketed deterministically by a stable subject so a
+given subject always resolves to the same value:
+
+```ts
+{ splits: [{ value: "A", weight: 50 }, { value: "B", weight: 50 }], by: "userId" }
+```
+
+`by` names the context attribute to bucket by; when omitted, `context.subjectRef` is used. Weights
+are relative (normalized across splits).
 
 ## Types
 
 ```ts
+type VariantValue = boolean | string | number;
+type AttributeValue = boolean | string | number;
+type EvalReason =
+  | "flag" | "rule" | "rollout" | "override" | "disabled" | "default" | "unknown";
+
+interface EvalContext {
+  subjectRef?: string;
+  attributes?: Record<string, AttributeValue>;
+}
+
+interface EvalOptions {
+  context?: EvalContext;
+  default?: VariantValue;
+}
+
+interface Condition {
+  attribute: string;
+  op: "eq" | "neq" | "in" | "nin" | "contains" | "gt" | "gte" | "lt" | "lte";
+  values: AttributeValue[];
+}
+
+interface Split {
+  value: VariantValue;
+  weight: number;
+}
+
+interface Rollout {
+  splits: Split[];
+  by?: string;
+}
+
+interface Rule {
+  conditions: Condition[]; // AND; an empty list is a catch-all
+  value?: VariantValue;
+  rollout?: Rollout;
+}
+
+interface Variant {
+  value: VariantValue;
+  label?: string;
+}
+
+interface FlagDefinition {
+  key: string;
+  value: VariantValue;
+  description?: string;
+  variants?: Variant[];
+  rules?: Rule[];
+  rollout?: Rollout;
+}
+
 interface FlagDoc {
   _id: string;
   _creationTime: number;
   key: string;
   description?: string;
-  value: boolean;
+  value: VariantValue;
+  variants?: Variant[];
+  rules?: Rule[];
+  rollout?: Rollout;
+  status: "active" | "archived";
   createdAt: number;
   updatedAt: number;
 }
 
 interface FlagEvaluation {
-  value: boolean;
-  reason: "flag" | "unknown";
+  value: VariantValue;
+  reason: EvalReason;
 }
 ```
 
@@ -56,10 +158,25 @@ interface FlagEvaluation {
 
 | Code | Thrown by | Condition |
 |------|-----------|-----------|
-| `FLAG_NOT_FOUND` | `enable`, `disable`, `remove` | The flag key does not exist in the component's table |
+| `FLAG_NOT_FOUND` | `enable`, `disable`, `archive`, `restore`, `remove`, `setOverride` | The flag key does not exist |
 
-## Roadmap
+## React
 
-`0.1.0` ships the boolean kill-switch core. Multivariate variants, percentage rollouts,
-attribute targeting, per-environment rules, and the React provider/hooks shown in the
-README are planned for follow-up releases.
+The optional `@vllnt/convex-flags/react` entry ships reactive hooks over `convex/react`'s
+`useQuery`. They take the host's own re-exported `evaluate` / `all` query refs. `react` is an
+optional peer dependency; a backend-only consumer never imports this entry.
+
+```tsx
+import { useFlag, useFlags } from "@vllnt/convex-flags/react";
+import { api } from "../convex/_generated/api";
+
+const checkout = useFlag(api.flags.evaluate, "new-checkout", {
+  context: { subjectRef: userId },
+});
+// checkout is `undefined` while loading, then { value, reason }.
+```
+
+| Hook | Args | Returns |
+|------|------|---------|
+| `useFlag(query, key, options?)` | evaluate ref, `string`, `UseFlagOptions?` | `FlagEvaluation \| undefined` |
+| `useFlags(query, context?)` | all ref, `EvalContext?` | `Record<string, FlagEvaluation> \| undefined` |

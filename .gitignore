@@ -41,3 +41,10 @@ skills/
 
 # Convex example generated (types only; JS stubs committed for tests)
 example/convex/_generated/ai/
+
+# Convex build artifacts emitted into the example functions dir (root level only;
+# the committed _generated/*.js stubs live one level down and are unaffected)
+example/convex/*.js
+example/convex/*.d.ts
+example/convex/*.map
+.convex/
