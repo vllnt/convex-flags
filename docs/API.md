@@ -5,8 +5,8 @@
 The public surface is the `Flags` client class (`src/client/index.ts`). Construct it once
 with the mounted component reference, then call its methods from host
 queries/mutations/actions. The host owns auth — gate the management methods (`define`,
-`enable`, `disable`, `archive`, `restore`, `remove`, `setOverride`, `clearOverride`) behind
-your own authorized mutations.
+`update`, `enable`, `disable`, `archive`, `restore`, `remove`, `setOverride`, `clearOverride`)
+behind your own authorized mutations.
 
 ```ts
 import { Flags } from "@vllnt/convex-flags";
@@ -22,9 +22,10 @@ boolean flag is the two-variant case; string/number flags are multivariate.
 
 | Method | Args | Returns | Notes |
 |--------|------|---------|-------|
-| `define(ctx, definition)` | `FlagDefinition` | `Promise<string>` | Create a flag, or replace its definition (value, description, variants, rules, rollout) if the key exists. Status is preserved on update. Returns the flag id. |
-| `enable(ctx, key)` | `string` | `Promise<null>` | Set a boolean flag's value to `true`. Throws `FLAG_NOT_FOUND`. |
-| `disable(ctx, key)` | `string` | `Promise<null>` | Set a boolean flag's value to `false`. Throws `FLAG_NOT_FOUND`. |
+| `define(ctx, definition)` | `FlagDefinition` | `Promise<string>` | Create a flag, or **fully replace** its definition (value, description, variants, rules, rollout) if the key exists — fields omitted from the definition are cleared. Status is preserved on replace. Returns the flag id. |
+| `update(ctx, key, patch)` | `string, FlagUpdate` | `Promise<null>` | **Partially** update a flag: patch only the supplied fields (the opposite of `define`); omitted fields are left untouched. Throws `FLAG_NOT_FOUND`. |
+| `enable(ctx, key)` | `string` | `Promise<null>` | Boolean convenience — set the flag's value to `true`. For multivariate flags use `define`/`update`. Throws `FLAG_NOT_FOUND`. |
+| `disable(ctx, key)` | `string` | `Promise<null>` | Boolean convenience — set the flag's value to `false`. For multivariate flags use `define`/`update`. Throws `FLAG_NOT_FOUND`. |
 | `archive(ctx, key)` | `string` | `Promise<null>` | Reversibly retire a flag. Evaluation skips targeting and serves the base value with reason `disabled`. Throws `FLAG_NOT_FOUND`. |
 | `restore(ctx, key)` | `string` | `Promise<null>` | Return an archived flag to active. Throws `FLAG_NOT_FOUND`. |
 | `remove(ctx, key)` | `string` | `Promise<null>` | Permanently delete a flag and its overrides. Throws `FLAG_NOT_FOUND`. |
@@ -134,6 +135,15 @@ interface FlagDefinition {
   rollout?: Rollout;
 }
 
+interface FlagUpdate {
+  // Partial patch for `update` — only supplied fields change; key passed separately.
+  value?: VariantValue;
+  description?: string;
+  variants?: Variant[];
+  rules?: Rule[];
+  rollout?: Rollout;
+}
+
 interface FlagDoc {
   _id: string;
   _creationTime: number;
@@ -158,7 +168,7 @@ interface FlagEvaluation {
 
 | Code | Thrown by | Condition |
 |------|-----------|-----------|
-| `FLAG_NOT_FOUND` | `enable`, `disable`, `archive`, `restore`, `remove`, `setOverride` | The flag key does not exist |
+| `FLAG_NOT_FOUND` | `update`, `enable`, `disable`, `archive`, `restore`, `remove`, `setOverride` | The flag key does not exist |
 
 ## React
 

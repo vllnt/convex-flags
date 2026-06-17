@@ -48,11 +48,39 @@ Peer dependency: `convex@^1.36.1`. `react` is an optional peer dependency, neede
 ## Usage
 
 ```ts
-// convex/flags.ts — instantiate once and re-export.
+// convex/flags.ts — instantiate once, then re-export the public function refs the
+// rest of your app (and the React hooks) call. The host owns auth: gate the
+// management mutations here before delegating to the component.
+import { v } from "convex/values";
 import { Flags } from "@vllnt/convex-flags";
 import { components } from "./_generated/api";
+import { mutation, query } from "./_generated/server";
 
 export const flags = new Flags(components.flags);
+
+// Evaluation queries — reactive; `api.flags.evaluate` is what the React hooks below use.
+export const evaluate = query({
+  args: { key: v.string(), context: v.optional(v.any()), default: v.optional(v.any()) },
+  handler: (ctx, args) =>
+    flags.evaluate(ctx, args.key, { context: args.context, default: args.default }),
+});
+
+export const all = query({
+  args: { context: v.optional(v.any()) },
+  handler: (ctx, args) => flags.all(ctx, args.context),
+});
+
+// Management mutations — apply your own auth check before delegating.
+export const define = mutation({
+  args: { key: v.string(), value: v.any() /* + description/variants/rules/rollout */ },
+  handler: (ctx, args) => {
+    // assertAdmin(ctx);
+    return flags.define(ctx, args);
+  },
+});
+
+// Wrap the rest the same way — `update`, `enable`, `disable`, `archive`,
+// `restore`, `setOverride`, `clearOverride` — each gated then delegated.
 ```
 
 ```ts
@@ -89,24 +117,28 @@ export const checkout = query({
 | `variant(ctx, key, options?)` | query | the resolved value |
 | `get(ctx, key)` / `list(ctx)` | query | `FlagDoc \| null` / `FlagDoc[]` |
 | `all(ctx, context?)` | query | `Record<string, FlagEvaluation>` (reactive bootstrap) |
-| `define(ctx, definition)` | mutation | Create or replace a flag (value, variants, rules, rollout) |
-| `enable(ctx, key)` / `disable(ctx, key)` | mutation | Toggle a boolean flag |
+| `define(ctx, definition)` | mutation | Create or **fully replace** a flag (value, variants, rules, rollout) |
+| `update(ctx, key, patch)` | mutation | **Partially** update a flag — only supplied fields change, the rest are kept |
+| `enable(ctx, key)` / `disable(ctx, key)` | mutation | Toggle a boolean flag (sets value `true`/`false`) |
 | `archive(ctx, key)` / `restore(ctx, key)` | mutation | Reversibly retire / re-activate a flag |
 | `setOverride(ctx, key, subjectRef, value)` / `clearOverride(ctx, key, subjectRef)` | mutation | Force / clear a per-subject value |
 | `remove(ctx, key)` | mutation | Hard-delete a flag and its overrides |
 
 `evaluate` resolves in order: override → archived → targeting rules → fallthrough rollout → flag
-value; an unknown key serves the caller `default` or `false`. Full reference, types, operators, and
-the React hooks: [docs/API.md](docs/API.md).
+value; an unknown key serves the caller `default` or `false`. `enable`/`disable` are boolean
+convenience (they set the value to `true`/`false`) — use `define`/`update` for multivariate flags.
+Full reference, types, operators, and the React hooks: [docs/API.md](docs/API.md).
 
 ## React
 
-Optional reactive hooks via the `./react` entry (`react` is an optional peer dependency):
+Optional reactive hooks via the `./react` entry (`react` is an optional peer dependency). Pass the
+`evaluate` query you exported from `convex/flags.ts` above — `api.flags.evaluate`:
 
 ```tsx
 import { useFlag } from "@vllnt/convex-flags/react";
 import { api } from "../convex/_generated/api";
 
+// api.flags.evaluate is the query exported in convex/flags.ts (Usage, above).
 const checkout = useFlag(api.flags.evaluate, "new-checkout", { context: { subjectRef: userId } });
 if (checkout?.value === true) { /* render the new checkout */ }
 ```

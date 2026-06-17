@@ -30,6 +30,26 @@ export const define = mutation({
   handler: (ctx, args) => flags.define(ctx, args),
 });
 
+export const update = mutation({
+  args: {
+    key: v.string(),
+    value: v.optional(variantValue),
+    description: v.optional(v.string()),
+    variants: v.optional(v.array(variant)),
+    rules: v.optional(v.array(rule)),
+    rollout: v.optional(rollout),
+  },
+  returns: v.null(),
+  handler: (ctx, args) =>
+    flags.update(ctx, args.key, {
+      value: args.value,
+      description: args.description,
+      variants: args.variants,
+      rules: args.rules,
+      rollout: args.rollout,
+    }),
+});
+
 export const enable = mutation({
   args: { key: v.string() },
   returns: v.null(),

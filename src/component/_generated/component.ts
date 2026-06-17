@@ -116,6 +116,49 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
         null,
         Name
       >;
+      update: FunctionReference<
+        "mutation",
+        "internal",
+        {
+          description?: string;
+          key: string;
+          rollout?: {
+            by?: string;
+            splits: Array<{ value: boolean | string | number; weight: number }>;
+          };
+          rules?: Array<{
+            conditions: Array<{
+              attribute: string;
+              op:
+                | "eq"
+                | "neq"
+                | "in"
+                | "nin"
+                | "contains"
+                | "gt"
+                | "gte"
+                | "lt"
+                | "lte";
+              values: Array<boolean | string | number>;
+            }>;
+            rollout?: {
+              by?: string;
+              splits: Array<{
+                value: boolean | string | number;
+                weight: number;
+              }>;
+            };
+            value?: boolean | string | number;
+          }>;
+          value?: boolean | string | number;
+          variants?: Array<{
+            label?: string;
+            value: boolean | string | number;
+          }>;
+        },
+        null,
+        Name
+      >;
     };
     queries: {
       all: FunctionReference<

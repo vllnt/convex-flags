@@ -1,6 +1,6 @@
 # @vllnt/convex-flags
 
-> Feature flags as a Convex component - backend-evaluated, reactive kill-switches
+> Feature flags as a Convex component — variants, targeting, percentage rollouts, and per-subject overrides, evaluated on the backend and streamed live to clients.
 
 `@vllnt/convex-flags` is a publishable Convex component targeting `convex@^1.36.1`.
 It stores feature flags in its own sandboxed tables, keyed by an opaque host-chosen

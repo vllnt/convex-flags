@@ -26,6 +26,15 @@ All notable changes to this project are documented here. The format is based on
   an optional peer dependency.
 - New evaluation reason codes: `rule`, `rollout`, `override`, `disabled`, `default` (alongside
   `flag`, `unknown`).
+- **Partial update** — `update(ctx, key, patch)` patches only the supplied fields, leaving the rest
+  untouched (the opposite of `define`, which fully replaces a definition).
+
+### Changed
+
+- **Docs polish** — refreshed the package tagline; the README Usage section now shows a complete
+  `convex/flags.ts` host module (the `evaluate`/`all` queries the React hooks consume, plus gated
+  management wrappers); documented `define` (full replace) vs `update` (partial) and that
+  `enable`/`disable` are boolean convenience.
 
 ### Notes
 

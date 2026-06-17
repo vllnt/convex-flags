@@ -33,6 +33,19 @@ export interface FlagDefinition {
   rollout?: Rollout;
 }
 
+/**
+ * A partial patch passed to {@link Flags.update}. Only the supplied fields are
+ * changed; omitted fields are left untouched (unlike {@link FlagDefinition},
+ * which fully replaces the definition). The key is passed separately.
+ */
+export interface FlagUpdate {
+  value?: VariantValue;
+  description?: string;
+  variants?: Variant[];
+  rules?: Rule[];
+  rollout?: Rollout;
+}
+
 /** Options for {@link Flags.evaluate} / {@link Flags.variant}. */
 export interface EvalOptions {
   /** Host-supplied targeting/bucketing context. */

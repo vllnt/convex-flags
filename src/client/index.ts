@@ -9,6 +9,7 @@ import type {
   FlagDefinition,
   FlagDoc,
   FlagEvaluation,
+  FlagUpdate,
   Rollout,
   Rule,
   Variant,
@@ -33,6 +34,19 @@ export interface FlagsComponent {
         rollout?: Rollout;
       },
       string
+    >;
+    update: FunctionReference<
+      "mutation",
+      "internal",
+      {
+        key: string;
+        value?: VariantValue;
+        description?: string;
+        variants?: Variant[];
+        rules?: Rule[];
+        rollout?: Rollout;
+      },
+      null
     >;
     enable: FunctionReference<"mutation", "internal", { key: string }, null>;
     disable: FunctionReference<"mutation", "internal", { key: string }, null>;
@@ -87,9 +101,9 @@ interface RunMutationCtx {
 /**
  * Consumer-facing client for `@vllnt/convex-flags`. Construct with the mounted
  * component ref, then call from host queries/mutations/actions. The host owns
- * auth: gate the management methods (`define`, `enable`, `disable`, `archive`,
- * `restore`, `remove`, `setOverride`, `clearOverride`) behind your own
- * authorized mutations.
+ * auth: gate the management methods (`define`, `update`, `enable`, `disable`,
+ * `archive`, `restore`, `remove`, `setOverride`, `clearOverride`) behind your
+ * own authorized mutations.
  *
  * @example
  * ```ts
@@ -103,6 +117,14 @@ export class Flags {
   /** Create a flag, or replace its definition if the key already exists. */
   define(ctx: RunMutationCtx, definition: FlagDefinition): Promise<string> {
     return ctx.runMutation(this.component.mutations.define, definition);
+  }
+
+  /**
+   * Partially update a flag: only the supplied fields change, the rest are left
+   * untouched (unlike `define`, which fully replaces). Throws `FLAG_NOT_FOUND`.
+   */
+  update(ctx: RunMutationCtx, key: string, patch: FlagUpdate): Promise<null> {
+    return ctx.runMutation(this.component.mutations.update, { key, ...patch });
   }
 
   /** Turn a boolean flag on. Throws `FLAG_NOT_FOUND` if the key is undefined. */
@@ -212,6 +234,7 @@ export type {
   FlagDefinition,
   FlagDoc,
   FlagEvaluation,
+  FlagUpdate,
   Rollout,
   Rule,
   Variant,

@@ -33,7 +33,7 @@ src/
 ├── react/
 │   └── index.ts           # Optional "./react" entry — useFlag / useFlags over convex/react useQuery
 └── component/
-    ├── mutations.ts        # define, enable, disable, archive, restore, remove, setOverride, clearOverride
+    ├── mutations.ts        # define, update, enable, disable, archive, restore, remove, setOverride, clearOverride
     ├── queries.ts          # get, list, evaluate, all
     ├── validators.ts       # variantValue, condition, rule, rollout, flagFields, overrideFields, evalContext, …
     ├── schema.ts           # flags (by_key) + overrides (by_key_subject, by_subject) tables
@@ -100,8 +100,10 @@ Use `pnpm build:codegen` (or `npx convex dev --once`) to regenerate the checked-
 - Mutations live in `mutations.ts`, queries in `queries.ts` (enforced by `@vllnt/eslint-config/convex`).
 - Sandboxed `flags` + `overrides` tables only — the component never reads host or sibling tables.
 - A flag is keyed by an opaque, host-chosen string. The host owns auth and gates the management
-  methods (`define`, `enable`, `disable`, `archive`, `restore`, `remove`, `setOverride`,
+  methods (`define`, `update`, `enable`, `disable`, `archive`, `restore`, `remove`, `setOverride`,
   `clearOverride`).
+- `define` fully replaces a definition; `update` patches only the supplied fields. `enable`/`disable`
+  are boolean convenience (set the value to `true`/`false`) — multivariate flags use `define`/`update`.
 - No bare `v.any()` in component code; the engine in `shared.ts` stays pure.
 - Errors are code-tagged: missing flags throw `FLAG_NOT_FOUND`.
 

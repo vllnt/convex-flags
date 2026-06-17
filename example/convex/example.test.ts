@@ -389,6 +389,76 @@ describe("lifecycle", () => {
 });
 
 // ---------------------------------------------------------------------------
+// Partial update (define replaces, update patches)
+// ---------------------------------------------------------------------------
+
+describe("update", () => {
+  test("updating ONLY rollout leaves rules intact", async () => {
+    const t = setup();
+    await t.mutation(api.example.define, {
+      key: "k",
+      value: "a",
+      rules: [{ conditions: [{ attribute: "plan", op: "eq", values: ["pro"] }], value: "b" }],
+    });
+    await t.mutation(api.example.update, {
+      key: "k",
+      rollout: { splits: [{ value: "a", weight: 1 }] },
+    });
+    const doc = await t.query(api.example.get, { key: "k" });
+    expect(doc?.rules).toHaveLength(1);
+    expect(doc?.rollout).toEqual({ splits: [{ value: "a", weight: 1 }] });
+  });
+
+  test("updating ONLY value leaves rollout intact", async () => {
+    const t = setup();
+    await t.mutation(api.example.define, {
+      key: "k",
+      value: "a",
+      rollout: { splits: [{ value: "a", weight: 1 }] },
+    });
+    await t.mutation(api.example.update, { key: "k", value: "c" });
+    const doc = await t.query(api.example.get, { key: "k" });
+    expect(doc?.value).toBe("c");
+    expect(doc?.rollout).toEqual({ splits: [{ value: "a", weight: 1 }] });
+  });
+
+  test("updating description leaves the value untouched", async () => {
+    const t = setup();
+    await t.mutation(api.example.define, { key: "k", value: true });
+    await t.mutation(api.example.update, { key: "k", description: "now documented" });
+    const doc = await t.query(api.example.get, { key: "k" });
+    expect(doc?.description).toBe("now documented");
+    expect(doc?.value).toBe(true);
+  });
+
+  test("a multi-field update patches every supplied field at once", async () => {
+    const t = setup();
+    await t.mutation(api.example.define, { key: "k", value: "a" });
+    await t.mutation(api.example.update, {
+      key: "k",
+      value: "b",
+      description: "multi",
+      variants: [{ value: "a" }, { value: "b" }],
+      rules: [{ conditions: [{ attribute: "plan", op: "eq", values: ["pro"] }], value: "b" }],
+      rollout: { splits: [{ value: "a", weight: 1 }] },
+    });
+    const doc = await t.query(api.example.get, { key: "k" });
+    expect(doc?.value).toBe("b");
+    expect(doc?.description).toBe("multi");
+    expect(doc?.variants).toHaveLength(2);
+    expect(doc?.rules).toHaveLength(1);
+    expect(doc?.rollout).toEqual({ splits: [{ value: "a", weight: 1 }] });
+  });
+
+  test("update on an unknown key throws FLAG_NOT_FOUND", async () => {
+    const t = setup();
+    await expect(
+      t.mutation(api.example.update, { key: "missing", value: true }),
+    ).rejects.toThrow("FLAG_NOT_FOUND");
+  });
+});
+
+// ---------------------------------------------------------------------------
 // Per-subject overrides
 // ---------------------------------------------------------------------------
 

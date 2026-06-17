@@ -3,7 +3,7 @@
 > Feature flags as a Convex component: backend-evaluated, reactive, and streamed to every
 > connected client with no redeploy and no third-party flag SaaS.
 
-**Now:** docs-ergonomics
+**Now:** _between phases — docs-ergonomics shipped; follow-ups in Later_
 **Last updated:** 2026-06-17
 
 ## boolean-core [DONE 2026-06]
@@ -80,20 +80,21 @@ can be forced and cleared. — met.
 - [-] flag-lifecycle.2 lastEvaluatedAt stale detection — dropped: a reactive read-only query can't write on eval, 2026-06-17 (architectural)
 - [-] flag-lifecycle.4 Change-history/audit — deferred: compose `@vllnt/convex-events` rather than own a table, 2026-06-17 (Later)
 
-## docs-ergonomics [PLANNED]
+## docs-ergonomics [DONE 2026-06]
 
 **Goal:** Close the first-time-developer onboarding gaps surfaced by the 2026-06-17 review — the
 engine is complete and tested; this phase is docs + ergonomic polish, not new capability.
 **Exit criteria:** a newcomer can wire reads/writes + the React hooks from the README alone, and
-cannot silently wipe a flag's targeting by re-`define`-ing it.
+cannot silently wipe a flag's targeting by re-`define`-ing it. — met (59 tests, 100%, all gates green).
 
-- [ ] docs-ergonomics.1 Add a complete copy-paste `convex/flags.ts` host-wrappers module to the README and point the React example's `api.flags.evaluate` at it (today the React snippet references a ref the docs never tell you to create — the #1 first-run blocker)
-- [ ] docs-ergonomics.2 Document `define` as a full-replace upsert + add a partial-update path (`setRollout`/`setRules`/`update`) so flipping a value can't silently clear `rules`/`rollout`/`variants`
-- [ ] docs-ergonomics.3 Refresh the stale "kill-switches" tagline in `package.json` description, the `llms.txt` blockquote, and the GitHub/npm repo description (the component is now a full targeting engine)
-- [ ] docs-ergonomics.4 Guard or document `enable`/`disable` as boolean-only (today they coerce a string/number flag's value to a boolean)
+- [x] docs-ergonomics.1 Complete copy-paste `convex/flags.ts` host-wrappers module in the README (exports `evaluate`/`all` + gated mutations); the React example now points `api.flags.evaluate` at the exported query (the #1 first-run blocker)
+- [x] docs-ergonomics.2 Added the partial-update `update(key, patch)` mutation + client method (patches only supplied fields; `define` documented as full-replace); 5 new tests at 100%
+- [x] docs-ergonomics.3 Refreshed the stale "kill-switches" tagline in `package.json` description + `llms.txt` blockquote (GitHub/npm repo description updated out-of-band)
+- [x] docs-ergonomics.4 Documented `enable`/`disable` as boolean convenience (use `define`/`update` for multivariate) in README, `docs/API.md`, AGENTS.md
 
 ## Later
 
+- Export arg validators (a `./validators` entry: `evalContext`, `variantValue`, `rule`, `rollout`, …) so hosts can type their wrapper functions instead of `v.any()` — surfaced by the docs review of the host-wrappers snippet.
 - Variant enforcement — reject a `value` / rule / rollout value that is not among a flag's declared `variants` (catch typos at write time).
 - Version / semver targeting operator — beyond the raw numeric `gt`/`gte`/`lt`/`lte`.
 - Named reusable segments (targeting.2) — once a real consumer needs shared targeting groups.
