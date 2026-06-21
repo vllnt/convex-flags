@@ -111,11 +111,11 @@ Use `pnpm build:codegen` (or `npx convex dev --once`) to regenerate the checked-
 
 | Changed | Update in same commit |
 |---------|----------------------|
-| Client method signature (`src/client/index.ts`) | `docs/API.md`, `README.md` API Reference, `llms.txt`, regenerate `llms-full.txt` |
+| Client method signature (`src/client/index.ts`) | `docs/API.md`, `README.md` API Reference, `llms.txt` |
 | Engine / reason codes (`src/shared.ts`) | `docs/API.md` (evaluation order, types), `README.md` |
 | Schema / table fields (`src/component/schema.ts`, `validators.ts`) | `docs/API.md` Types, `README.md` Features |
-| `./react` hooks (`src/react/index.ts`) | `docs/API.md` React, `README.md` React; `generate-llms.mjs` source list |
+| `./react` hooks (`src/react/index.ts`) | `docs/API.md` React, `README.md` React |
 | Error codes | `docs/API.md` Error codes table |
 | Version bump | `CHANGELOG.md` entry, README badges (auto via CI) |
-| License | `README.md` License section, `llms.txt` License link label, `llms-full.txt` |
+| License | `README.md` License section, `llms.txt` License link label |
 | Convex peer range | `llms.txt` context line + `docs/API.md` Compatibility + `README.md` peer note |
