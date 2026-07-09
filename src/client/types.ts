@@ -18,7 +18,6 @@ export interface FlagDoc {
   variants?: Variant[];
   rules?: Rule[];
   rollout?: Rollout;
-  /** Absent on legacy rows written before `status` existed (read as `"active"`). */
   status?: "active" | "archived";
   createdAt: number;
   updatedAt: number;

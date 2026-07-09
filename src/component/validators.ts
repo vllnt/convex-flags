@@ -63,9 +63,6 @@ export const flagFields = {
   variants: v.optional(v.array(variant)),
   rules: v.optional(v.array(rule)),
   rollout: v.optional(rollout),
-  // Optional so pre-`status` rows written by an older component version still
-  // validate on deploy (a required field can't be added to an existing table in
-  // one release). `undefined` is read as `"active"`; `define` always writes it.
   status: v.optional(flagStatus),
   createdAt: v.number(),
   updatedAt: v.number(),

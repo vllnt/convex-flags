@@ -9,8 +9,6 @@ import { evaluateFlag } from "./shared.js";
  */
 describe("status backward compatibility (#5)", () => {
   test("the schema validator accepts a row without `status` (legacy data)", () => {
-    // If this reverts to required, a consumer's next `convex deploy` fails schema
-    // validation on its pre-existing flag documents.
     expect(flagFields.status.isOptional).toBe("optional");
   });
 
