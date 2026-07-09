@@ -36,6 +36,15 @@ All notable changes to this project are documented here. The format is based on
   management wrappers); documented `define` (full replace) vs `update` (partial) and that
   `enable`/`disable` are boolean convenience.
 
+### Fixed
+
+- **Backward-compatible `status`** — `flags.status` is now optional, so a deployment holding flag
+  rows written before `status` existed no longer fails schema validation on the next `convex deploy`
+  (`Object is missing the required field status`). A flag with no `status` is evaluated as active;
+  `define` still writes `status: "active"` for new flags. To materialize the column on legacy rows,
+  call `restore(key)`.
+  ([#5](https://github.com/vllnt/convex-flags/issues/5))
+
 ### Notes
 
 - Backward compatible: the boolean kill-switch API (`define({ key, value })`, `enable`/`disable`,

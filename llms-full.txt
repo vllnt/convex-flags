@@ -232,6 +232,15 @@ All notable changes to this project are documented here. The format is based on
   management wrappers); documented `define` (full replace) vs `update` (partial) and that
   `enable`/`disable` are boolean convenience.
 
+### Fixed
+
+- **Backward-compatible `status`** — `flags.status` is now optional, so a deployment holding flag
+  rows written before `status` existed no longer fails schema validation on the next `convex deploy`
+  (`Object is missing the required field status`). A flag with no `status` is evaluated as active;
+  `define` still writes `status: "active"` for new flags. To materialize the column on legacy rows,
+  call `restore(key)`.
+  ([#5](https://github.com/vllnt/convex-flags/issues/5))
+
 ### Notes
 
 - Backward compatible: the boolean kill-switch API (`define({ key, value })`, `enable`/`disable`,
@@ -311,7 +320,8 @@ boolean flag is the two-variant case; string/number flags are multivariate.
 `evaluate` resolves a flag in this order; the first that applies wins:
 
 1. **Override** — a per-subject override for `context.subjectRef` (reason `override`).
-2. **Archived** — an archived flag serves its base value (reason `disabled`); targeting is skipped.
+2. **Archived** — an archived flag serves its base value (reason `disabled`); targeting is skipped. A
+   flag with no `status` (a row written before `status` existed) is treated as active, not archived.
 3. **Rules** — targeting rules in order; the first whose conditions all match serves its `value`
    (reason `rule`) or its `rollout` (reason `rollout`).
 4. **Fallthrough rollout** — when no rule matched (reason `rollout`).
@@ -416,7 +426,7 @@ interface FlagDoc {
   variants?: Variant[];
   rules?: Rule[];
   rollout?: Rollout;
-  status: "active" | "archived";
+  status?: "active" | "archived"; // absent on rows written before `status` existed; read as "active"
   createdAt: number;
   updatedAt: number;
 }
@@ -572,7 +582,9 @@ export interface Rule {
 /** The evaluatable shape of a stored flag (the engine's input). */
 export interface EvaluableFlag {
   value: VariantValue;
-  status: "active" | "archived";
+  /** Optional: a legacy row written before `status` existed has none; the engine
+   * treats an absent status as `"active"`. */
+  status?: "active" | "archived";
   rules?: Rule[];
   rollout?: Rollout;
 }
@@ -729,7 +741,8 @@ export interface FlagDoc {
   variants?: Variant[];
   rules?: Rule[];
   rollout?: Rollout;
-  status: "active" | "archived";
+  /** Absent on legacy rows written before `status` existed (read as `"active"`). */
+  status?: "active" | "archived";
   createdAt: number;
   updatedAt: number;
 }
@@ -1121,7 +1134,10 @@ export const flagFields = {
   variants: v.optional(v.array(variant)),
   rules: v.optional(v.array(rule)),
   rollout: v.optional(rollout),
-  status: flagStatus,
+  // Optional so pre-`status` rows written by an older component version still
+  // validate on deploy (a required field can't be added to an existing table in
+  // one release). `undefined` is read as `"active"`; `define` always writes it.
+  status: v.optional(flagStatus),
   createdAt: v.number(),
   updatedAt: v.number(),
 };

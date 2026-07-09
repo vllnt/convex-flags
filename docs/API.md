@@ -48,7 +48,8 @@ boolean flag is the two-variant case; string/number flags are multivariate.
 `evaluate` resolves a flag in this order; the first that applies wins:
 
 1. **Override** — a per-subject override for `context.subjectRef` (reason `override`).
-2. **Archived** — an archived flag serves its base value (reason `disabled`); targeting is skipped.
+2. **Archived** — an archived flag serves its base value (reason `disabled`); targeting is skipped. A
+   flag with no `status` (a row written before `status` existed) is treated as active, not archived.
 3. **Rules** — targeting rules in order; the first whose conditions all match serves its `value`
    (reason `rule`) or its `rollout` (reason `rollout`).
 4. **Fallthrough rollout** — when no rule matched (reason `rollout`).
@@ -153,7 +154,7 @@ interface FlagDoc {
   variants?: Variant[];
   rules?: Rule[];
   rollout?: Rollout;
-  status: "active" | "archived";
+  status?: "active" | "archived"; // absent on rows written before `status` existed; read as "active"
   createdAt: number;
   updatedAt: number;
 }

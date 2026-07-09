@@ -110,7 +110,9 @@ export interface Rule {
 /** The evaluatable shape of a stored flag (the engine's input). */
 export interface EvaluableFlag {
   value: VariantValue;
-  status: "active" | "archived";
+  /** Optional: a legacy row written before `status` existed has none; the engine
+   * treats an absent status as `"active"`. */
+  status?: "active" | "archived";
   rules?: Rule[];
   rollout?: Rollout;
 }
