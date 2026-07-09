@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest";
 import { flagFields } from "./component/validators.js";
-import { evaluateFlag } from "./shared.js";
+import { evaluateFlag, withStatus } from "./shared.js";
 
 /**
  * Regression guard for #5 — a required `status` field broke deploys for any
@@ -34,5 +34,18 @@ describe("status backward compatibility (#5)", () => {
       value: "BASE",
       reason: "disabled",
     });
+  });
+
+  test("withStatus materializes an absent status as active for returned docs", () => {
+    const legacyRow: { key: string; value: boolean; status?: "active" | "archived" } = {
+      key: "legacy",
+      value: true,
+    };
+    expect(withStatus(legacyRow).status).toBe("active");
+  });
+
+  test("withStatus preserves an explicit status", () => {
+    const archivedRow = { key: "k", value: true, status: "archived" as const };
+    expect(withStatus(archivedRow).status).toBe("archived");
   });
 });

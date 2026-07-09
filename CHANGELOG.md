@@ -38,11 +38,12 @@ All notable changes to this project are documented here. The format is based on
 
 ### Fixed
 
-- **Backward-compatible `status`** — `flags.status` is now optional, so a deployment holding flag
-  rows written before `status` existed no longer fails schema validation on the next `convex deploy`
-  (`Object is missing the required field status`). A flag with no `status` is evaluated as active;
-  `define` still writes `status: "active"` for new flags. To materialize the column on legacy rows,
-  call `restore(key)`.
+- **Backward-compatible `status`** — the stored `flags.status` column is now optional, so a
+  deployment holding flag rows written before `status` existed no longer fails schema validation on
+  the next `convex deploy` (`Object is missing the required field status`). Reads materialize an
+  absent status as `"active"` — `get`/`list` return a concrete `status` and evaluation treats a
+  legacy flag as active — so the public `FlagDoc` shape is unchanged. `define` still writes
+  `status: "active"` for new flags; `restore(key)` stamps it onto legacy rows in storage.
   ([#5](https://github.com/vllnt/convex-flags/issues/5))
 
 ### Notes

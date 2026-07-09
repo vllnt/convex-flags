@@ -248,7 +248,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             };
             value?: boolean | string | number;
           }>;
-          status?: "active" | "archived";
+          status: "active" | "archived";
           updatedAt: number;
           value: boolean | string | number;
           variants?: Array<{
@@ -296,7 +296,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             };
             value?: boolean | string | number;
           }>;
-          status?: "active" | "archived";
+          status: "active" | "archived";
           updatedAt: number;
           value: boolean | string | number;
           variants?: Array<{

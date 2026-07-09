@@ -68,11 +68,14 @@ export const flagFields = {
   updatedAt: v.number(),
 };
 
-/** Public shape of a flag document returned by queries. */
+/** Public shape of a flag document returned by queries. `status` is materialized
+ * (a legacy row's absent status reads as active), so it is required here even
+ * though the stored column is optional. */
 export const flagDoc = v.object({
   _id: v.id("flags"),
   _creationTime: v.number(),
   ...flagFields,
+  status: flagStatus,
 });
 
 /** Column validators for a stored per-subject override. */

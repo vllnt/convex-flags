@@ -154,7 +154,7 @@ interface FlagDoc {
   variants?: Variant[];
   rules?: Rule[];
   rollout?: Rollout;
-  status?: "active" | "archived";
+  status: "active" | "archived";
   createdAt: number;
   updatedAt: number;
 }

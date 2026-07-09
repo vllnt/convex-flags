@@ -6,6 +6,7 @@ import { evalContext, evaluation, flagDoc, variantValue } from "./validators.js"
 import {
   EVAL_REASON,
   evaluateFlag,
+  withStatus,
   type EvalContext,
   type FlagEvaluation,
   type VariantValue,
@@ -37,10 +38,11 @@ export const get = query({
   args: { key: v.string() },
   returns: v.union(v.null(), flagDoc),
   handler: async (ctx, args) => {
-    return await ctx.db
+    const flag = await ctx.db
       .query("flags")
       .withIndex("by_key", (q) => q.eq("key", args.key))
       .unique();
+    return flag === null ? null : withStatus(flag);
   },
 });
 
@@ -49,7 +51,7 @@ export const list = query({
   args: {},
   returns: v.array(flagDoc),
   handler: async (ctx) => {
-    return await ctx.db.query("flags").collect();
+    return (await ctx.db.query("flags").collect()).map(withStatus);
   },
 });
 

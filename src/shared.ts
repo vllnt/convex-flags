@@ -239,3 +239,14 @@ export function evaluateFlag(
   }
   return { value: flag.value, reason: EVAL_REASON.flag };
 }
+
+/**
+ * Materialize a flag's lifecycle status for return to callers: a legacy row
+ * written before `status` existed has none and reads as `"active"`. Keeps the
+ * stored column optional (deploy-safe) while the public shape stays concrete.
+ */
+export function withStatus<T extends { status?: "active" | "archived" }>(
+  flag: T,
+): T & { status: "active" | "archived" } {
+  return { ...flag, status: flag.status ?? "active" };
+}

@@ -66,12 +66,14 @@ src/
 - **Archived = disabled.** An archived flag skips targeting and serves its base value with reason
   `disabled`; `restore` re-activates. Distinct from hard `remove`, which also deletes the flag's
   overrides.
-- **Backward-compatible schema evolution (#5).** `status` is `v.optional` so rows written before it
-  existed still validate on the consumer's next `convex deploy`; the engine reads an absent status as
-  `active` (`define` always writes it for new flags). A required column is never added to an existing
-  table in one release — expand (make optional) → migrate (backfill, e.g. `restore(key)`) → contract
-  (restore required in a future major). New required fields on the shipped `flags`/`overrides` tables
-  are the schema-evolution trap to guard against in review.
+- **Backward-compatible schema evolution (#5).** The stored `status` column is `v.optional` so rows
+  written before it existed still validate on the consumer's next `convex deploy`; reads materialize
+  an absent status as `active` (`withStatus` in `shared.ts` — `get`/`list` return a concrete status
+  and the engine treats a legacy flag as active), so the public `FlagDoc` shape stays required.
+  `define` always writes it for new flags. A required column is never added to an existing table in
+  one release — expand (make optional) → migrate (backfill, e.g. `restore(key)`) → contract (restore
+  required in a future major). New required fields on the shipped `flags`/`overrides` tables are the
+  schema-evolution trap to guard against in review.
 - **Reactive evaluation is read-only.** `evaluate` is a query and cannot write, so there is
   deliberately no `lastEvaluatedAt` stamping / stale-flag detection (that would require a write on
   read). Change history / audit is left to compose `@vllnt/convex-events`, not an in-component table.
