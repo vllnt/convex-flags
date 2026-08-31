@@ -2,6 +2,9 @@
   "extends": "@vllnt/typescript/node-library.json",
   "compilerOptions": {
     "lib": ["ES2024", "DOM"],
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "types": ["vite/client"],
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
