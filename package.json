@@ -54,7 +54,7 @@
     "release": "npm version patch && npm publish && git push --follow-tags"
   },
   "peerDependencies": {
-    "convex": "^1.36.1",
+    "convex": "^1.45.0",
     "react": "^18.0.0 || ^19.0.0"
   },
   "peerDependenciesMeta": {
@@ -69,10 +69,10 @@
     "@types/react-dom": "^18",
     "@typescript/native": "npm:typescript@7.0.2",
     "@vitest/coverage-v8": "^3.0.0",
-    "@vllnt/eslint-config": "^1.0.0",
+    "@vllnt/eslint-config": "2.0.0-canary.87019a5",
     "@vllnt/typescript": "2.0.0",
-    "convex": "^1.36.1",
-    "convex-test": "^0.0.50",
+    "convex": "^1.45.0",
+    "convex-test": "^0.0.56",
     "eslint": "^9.0.0",
     "jsdom": "^25",
     "prettier": "^3.4.0",

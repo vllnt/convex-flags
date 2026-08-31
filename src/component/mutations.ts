@@ -35,7 +35,7 @@ export const define = mutation({
     const now = Date.now();
     const existing = await findByKey(ctx, args.key);
     if (existing !== null) {
-      await ctx.db.patch(existing._id, {
+      await ctx.db.patch("flags", existing._id, {
         value: args.value,
         description: args.description,
         variants: args.variants,
@@ -95,7 +95,7 @@ export const update = mutation({
     if (args.rollout !== undefined) {
       patch.rollout = args.rollout;
     }
-    await ctx.db.patch(flag._id, patch);
+    await ctx.db.patch("flags", flag._id, patch);
     return null;
   },
 });
@@ -105,7 +105,7 @@ async function setValue(ctx: MutationCtx, key: string, value: boolean): Promise<
   if (flag === null) {
     flagNotFound();
   }
-  await ctx.db.patch(flag._id, { value, updatedAt: Date.now() });
+  await ctx.db.patch("flags", flag._id, { value, updatedAt: Date.now() });
 }
 
 /** Turn a boolean flag on (set its value to `true`). */
@@ -137,7 +137,7 @@ async function setStatus(
   if (flag === null) {
     flagNotFound();
   }
-  await ctx.db.patch(flag._id, { status, updatedAt: Date.now() });
+  await ctx.db.patch("flags", flag._id, { status, updatedAt: Date.now() });
 }
 
 /** Archive a flag: reversible retirement. Evaluation skips targeting and serves
@@ -175,9 +175,9 @@ export const remove = mutation({
       .withIndex("by_key_subject", (q) => q.eq("key", args.key))
       .collect();
     for (const override of overrides) {
-      await ctx.db.delete(override._id);
+      await ctx.db.delete("overrides", override._id);
     }
-    await ctx.db.delete(flag._id);
+    await ctx.db.delete("flags", flag._id);
     return null;
   },
 });
@@ -198,7 +198,7 @@ export const setOverride = mutation({
       )
       .unique();
     if (existing !== null) {
-      await ctx.db.patch(existing._id, { value: args.value });
+      await ctx.db.patch("overrides", existing._id, { value: args.value });
     } else {
       await ctx.db.insert("overrides", {
         key: args.key,
@@ -223,7 +223,7 @@ export const clearOverride = mutation({
       )
       .unique();
     if (existing !== null) {
-      await ctx.db.delete(existing._id);
+      await ctx.db.delete("overrides", existing._id);
     }
     return null;
   },
