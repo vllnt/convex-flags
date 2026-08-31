@@ -1,6 +1,6 @@
 name: Email Guard
-# Privacy guard: every commit's author AND committer must be the maintainer's GitHub
-# no-reply, and no commit message may carry a personal-provider email (e.g. a
+# Privacy guard: every commit's author AND committer must use a GitHub no-reply
+# address, and no commit message may carry a personal-provider email (e.g. a
 # `Co-authored-by:` trailer). Runs on pull requests AND on direct pushes to main.
 # Make the "Commit email privacy" check a required status check on main.
 
@@ -14,8 +14,8 @@ jobs:
     name: Commit email privacy
     runs-on: ubuntu-latest
     env:
-      # Exact account only ("only my account"):
-      ALLOWED_EMAIL_PATTERN: '^32437578\+bntvllnt@users\.noreply\.github\.com$'
+      # GitHub account no-reply addresses plus GitHub's signed web-flow identity:
+      ALLOWED_EMAIL_PATTERN: '^(([0-9]+\+)?[A-Za-z0-9][A-Za-z0-9-]{0,38}@users\.noreply\.github\.com|noreply@github\.com)$'
       # Personal mail providers that must never appear in a commit message/trailer:
       PERSONAL_PROVIDER_RE: '@(icloud|gmail|googlemail|hotmail|outlook|live|yahoo|ymail|proton|protonmail|aol|gmx|zoho|fastmail)\.'
     steps:
