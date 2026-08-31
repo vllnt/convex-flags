@@ -74,7 +74,7 @@
     "convex": "^1.45.0",
     "convex-test": "^0.0.56",
     "eslint": "^9.39.5",
-    "jsdom": "^30.0.1",
+    "jsdom": "^29.1.1",
     "prettier": "^3.9.6",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
