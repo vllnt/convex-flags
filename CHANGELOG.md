@@ -8,6 +8,7 @@ All notable changes to this project are documented here. The format is based on
 
 ### Changed
 
+- Refresh all direct dependencies to their latest compatible releases for canary validation.
 - Require `convex@^1.45.0` and update `convex-test` to `^0.0.56`.
 
 ### Added
