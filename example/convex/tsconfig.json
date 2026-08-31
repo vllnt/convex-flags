@@ -1,8 +1,16 @@
 {
   "extends": "../../tsconfig.json",
   "compilerOptions": {
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext"
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "rootDir": "../..",
+    "noEmit": true
   },
-  "include": ["./**/*"]
+  "include": [
+    "./**/*"
+  ],
+  "exclude": [
+    "./_generated",
+    "./**/*.test.ts"
+  ]
 }
