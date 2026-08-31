@@ -18,7 +18,12 @@ boolean kill-switches, string/number variants, attribute-targeting rules,
 weighted percentage rollouts, per-subject overrides, and reversible archiving.
 It owns its own sandboxed `flags` and `overrides` tables and has no child
 components. It follows the vllnt Component Standard (see the `convex-components`
-hub `.claude/rules/component-standard.md`).
+hub `AGENTS.md`).
+
+## Agent instructions
+
+`AGENTS.md` is the sole agent-instruction source for this repository. Do not add
+`CLAUDE.md` or `.claude` content.
 
 ## Architecture
 
@@ -87,6 +92,12 @@ src/
 - **Deferred (not built).** Named reusable segments (inline rule conditions cover targeting),
   JSON-object variant values, scheduled/progressive rollouts, stale-flag detection, and audit-event
   emission — see `ROADMAP.md` › `Later`.
+
+## Generated code
+
+- Every `**/_generated/**` file is owned exclusively by Convex CLI codegen.
+- Never create, edit, lint, or format generated files manually.
+- Run `pnpm codegen` to regenerate them and commit the generated output unchanged.
 
 ## Development
 
