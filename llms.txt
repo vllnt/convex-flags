@@ -2,7 +2,7 @@
 
 > Feature flags as a Convex component — variants, targeting, percentage rollouts, and per-subject overrides, evaluated on the backend and streamed live to clients.
 
-`@vllnt/convex-flags` is a publishable Convex component targeting `convex@^1.36.1`.
+`@vllnt/convex-flags` is a publishable Convex component targeting `convex@^1.45.0` on current main/canary.
 It stores feature flags in its own sandboxed tables, keyed by an opaque host-chosen
 string. A flag value is a typed primitive (`boolean | string | number`) and supports
 attribute-targeting rules, weighted percentage rollouts with stable per-subject
@@ -29,4 +29,3 @@ An optional `./react` entry ships `useFlag`/`useFlags` hooks; `react` is an opti
 - [Security Policy](SECURITY.md): Vulnerability reporting policy
 - [Code of Conduct](CODE_OF_CONDUCT.md): Community participation guidelines
 - [License](LICENSE): MIT license
-- [Full source bundle](llms-full.txt): Aggregated README, changelog, API docs, and key source files
