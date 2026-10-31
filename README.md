@@ -238,6 +238,22 @@ pnpm test:coverage  # enforced 100% on covered files
 Tests run against the real component runtime via `convex-test`
 (`@edge-runtime/vm`), not mocks.
 
+### Testing your app
+
+`@vllnt/convex-flags/test` exports `register(t, name = "flags")` to mount the
+component in a `convex-test` instance. It needs `convex-test` and `vitest`
+(with Vite's `import.meta.glob`) in the consuming app:
+
+```ts
+/// <reference types="vite/client" />
+import { convexTest } from "convex-test";
+import { register } from "@vllnt/convex-flags/test";
+import schema from "./schema";
+
+const t = convexTest(schema, import.meta.glob("./**/*.ts"));
+register(t);
+```
+
 ## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md).

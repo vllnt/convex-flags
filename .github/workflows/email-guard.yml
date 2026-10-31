@@ -9,19 +9,24 @@ on:
   push:
     branches: [main]
 
+permissions:
+  contents: read
+
 jobs:
   email-guard:
     name: Commit email privacy
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     env:
       # GitHub account no-reply addresses plus GitHub's signed web-flow identity:
       ALLOWED_EMAIL_PATTERN: '^(([0-9]+\+)?[A-Za-z0-9][A-Za-z0-9-]{0,38}@users\.noreply\.github\.com|noreply@github\.com)$'
       # Personal mail providers that must never appear in a commit message/trailer:
       PERSONAL_PROVIDER_RE: '@(icloud|gmail|googlemail|hotmail|outlook|live|yahoo|ymail|proton|protonmail|aol|gmx|zoho|fastmail)\.'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Scan commit identities + message trailers for leaked emails
         run: |

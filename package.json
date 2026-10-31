@@ -1,13 +1,14 @@
 {
   "name": "@vllnt/convex-flags",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Feature flags as a Convex component — variants, targeting, percentage rollouts, and per-subject overrides, evaluated on the backend and streamed live to clients.",
   "license": "MIT",
   "type": "module",
-  "packageManager": "pnpm@9.15.4",
+  "packageManager": "pnpm@10.34.8",
   "files": [
     "dist",
-    "src"
+    "src",
+    "!src/**/*.test.*"
   ],
   "exports": {
     "./package.json": "./package.json",
@@ -41,16 +42,13 @@
     "build": "tsc --project ./tsconfig.build.json",
     "build:codegen": "pnpm codegen && pnpm build",
     "build:clean": "rm -rf dist *.tsbuildinfo && pnpm build:codegen",
-    "typecheck": "tsc --noEmit",
-    "typecheck:ci": "tsc --noEmit --project tsconfig.ci.json",
-    "lint": "pnpm check:agents && eslint .",
+    "typecheck": "tsc --noEmit --incremental --tsBuildInfoFile node_modules/.cache/tsc/typecheck.tsbuildinfo",
+    "typecheck:ci": "tsc --noEmit --incremental --tsBuildInfoFile node_modules/.cache/tsc/typecheck-ci.tsbuildinfo --project tsconfig.ci.json",
+    "lint": "pnpm check:agents && eslint --cache --cache-location node_modules/.cache/eslint/ .",
     "test": "vitest run --passWithNoTests",
     "test:watch": "vitest --typecheck --clearScreen false",
     "test:coverage": "vitest run --coverage --coverage.reporter=text",
     "preversion": "pnpm install --frozen-lockfile && pnpm build && pnpm test:coverage && pnpm typecheck",
-    "prepublishOnly": "npm whoami || npm login",
-    "alpha": "npm version prerelease --preid alpha && npm publish --tag alpha && git push --follow-tags",
-    "release": "npm version patch && npm publish && git push --follow-tags",
     "check:agents": "node -e \"const f=require('node:fs');if(!f.existsSync('AGENTS.md')||f.existsSync('CLAUDE.md')||f.existsSync('.claude'))process.exit(1)\"",
     "codegen": "pnpm convex codegen --component-dir ./src/component"
   },
@@ -84,22 +82,17 @@
     "vitest": "^5.0.5"
   },
   "pnpm": {
+    "minimumReleaseAge": 10080,
+    "minimumReleaseAgeExclude": [
+      "@vllnt/*"
+    ],
+    "ignoredBuiltDependencies": [
+      "esbuild"
+    ],
     "overrides": {
-      "@asamuzakjp/css-color": "7.1.7",
-      "@csstools/css-color-parser": "4.2.6",
-      "@csstools/css-syntax-patches-for-csstree": "1.1.15",
-      "@oxc-project/types": "0.155.0",
-      "brace-expansion@<1.1.21": "1.1.21",
-      "brace-expansion@>=4.0.0 <5.0.12": "5.0.12",
-      "convex": "1.48.0",
       "deepmerge-ts@<8.0.0": "8.0.0",
       "esbuild@>=0.27.3 <0.28.1": "0.28.1",
-      "handlebars@<4.7.10": "4.7.10",
-      "magic-string": "1.4.3",
-      "postcss": "8.5.31",
-      "rolldown": "1.2.15",
-      "source-map-js@<1.2.2": "1.2.2",
-      "zod@<4.6.6": "4.6.6"
+      "handlebars@<4.7.10": "4.7.10"
     }
   },
   "homepage": "https://github.com/vllnt/convex-flags#readme",
