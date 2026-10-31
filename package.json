@@ -1,6 +1,6 @@
 {
   "name": "@vllnt/convex-flags",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Feature flags as a Convex component — variants, targeting, percentage rollouts, and per-subject overrides, evaluated on the backend and streamed live to clients.",
   "license": "MIT",
   "type": "module",
