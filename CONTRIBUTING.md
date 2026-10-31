@@ -46,10 +46,13 @@ at least one adversarial test (auth-denied, invalid input, boundary).
 
 ## Releases
 
-Maintainers only:
+Maintainers only. Every publish runs in `.github/workflows/publish.yml` with npm trusted
+publishing and provenance; nothing is published from a local machine.
 
-- Preferred: run `.github/workflows/publish.yml` via `workflow_dispatch` for patch/minor/major.
-- Local fallback: `pnpm release` (patch) / `pnpm alpha` (prerelease).
+- Canary (`@canary`): pushes to `main` publish one when the `CANARY_ENABLED` repository
+  variable is `true`; otherwise run the workflow manually on `main`.
+- Stable (`@latest`): merge a PR that sets `package.json` `version` and adds a matching
+  `## [X.Y.Z]` entry to `CHANGELOG.md`, then push the tag `vX.Y.Z` on that `main` commit.
 
 ## Reporting Issues
 
