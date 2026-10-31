@@ -90,21 +90,9 @@
       "esbuild"
     ],
     "overrides": {
-      "@asamuzakjp/css-color": "7.1.7",
-      "@csstools/css-color-parser": "4.2.6",
-      "@csstools/css-syntax-patches-for-csstree": "1.1.15",
-      "@oxc-project/types": "0.155.0",
-      "brace-expansion@<1.1.21": "1.1.21",
-      "brace-expansion@>=4.0.0 <5.0.12": "5.0.12",
-      "convex": "1.48.0",
       "deepmerge-ts@<8.0.0": "8.0.0",
       "esbuild@>=0.27.3 <0.28.1": "0.28.1",
-      "handlebars@<4.7.10": "4.7.10",
-      "magic-string": "1.4.3",
-      "postcss": "8.5.31",
-      "rolldown": "1.2.15",
-      "source-map-js@<1.2.2": "1.2.2",
-      "zod@<4.6.6": "4.6.6"
+      "handlebars@<4.7.10": "4.7.10"
     }
   },
   "homepage": "https://github.com/vllnt/convex-flags#readme",
