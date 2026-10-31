@@ -177,12 +177,14 @@ configuration or list filter.
 ## Error codes
 
 Missing-flag mutations throw a JavaScript `Error("FLAG_NOT_FOUND")`, not a
-structured `ConvexError` payload. Do not depend on client-visible error text in
+structured `ConvexError` payload. Invalid arguments throw a `ConvexError` whose
+`data.code` is `INVALID_ARGUMENT`. Do not depend on client-visible error text in
 production.
 
-| Code             | Thrown by                                                                    | Condition                   |
-| ---------------- | ---------------------------------------------------------------------------- | --------------------------- |
-| `FLAG_NOT_FOUND` | `update`, `enable`, `disable`, `archive`, `restore`, `remove`, `setOverride` | The flag key does not exist |
+| Code               | Thrown by                                                                                    | Condition                                                                                                               |
+| ------------------ | -------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `FLAG_NOT_FOUND`   | `update`, `enable`, `disable`, `archive`, `restore`, `remove`, `setOverride`                 | The flag key does not exist                                                                                             |
+| `INVALID_ARGUMENT` | every mutation (`key`); `setOverride`, `clearOverride` (`subjectRef`); `define`, `update`    | `key` or `subjectRef` is empty, or a rollout weight (flag-level or in a rule) is `NaN`, infinite or negative            |
 
 ## React
 

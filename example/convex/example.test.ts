@@ -518,3 +518,87 @@ describe("overrides", () => {
     ).toEqual({ value: false, reason: "flag" });
   });
 });
+
+// ---------------------------------------------------------------------------
+// Argument validation
+// ---------------------------------------------------------------------------
+
+describe("argument validation", () => {
+  test("management mutations reject an empty key", async () => {
+    const t = setup();
+    for (const fn of [
+      api.example.enable,
+      api.example.disable,
+      api.example.remove,
+      api.example.archive,
+      api.example.restore,
+    ]) {
+      await expect(t.mutation(fn, { key: "" })).rejects.toThrow(/INVALID_ARGUMENT/);
+    }
+    await expect(
+      t.mutation(api.example.define, { key: "", value: true }),
+    ).rejects.toThrow(/INVALID_ARGUMENT/);
+    await expect(
+      t.mutation(api.example.update, { key: "", value: true }),
+    ).rejects.toThrow(/INVALID_ARGUMENT/);
+    expect(await t.query(api.example.list, {})).toEqual([]);
+  });
+
+  test("setOverride and clearOverride reject an empty key or subjectRef", async () => {
+    const t = setup();
+    await t.mutation(api.example.define, { key: "f", value: false });
+    for (const args of [
+      { key: "", subjectRef: "u" },
+      { key: "f", subjectRef: "" },
+    ]) {
+      await expect(
+        t.mutation(api.example.setOverride, { ...args, value: true }),
+      ).rejects.toThrow(/INVALID_ARGUMENT/);
+      await expect(t.mutation(api.example.clearOverride, args)).rejects.toThrow(
+        /INVALID_ARGUMENT/,
+      );
+    }
+    expect(
+      (await t.query(api.example.evaluate, { key: "f", context: { subjectRef: "" } })).reason,
+    ).toBe("flag");
+  });
+
+  test.each([Number.NaN, Number.POSITIVE_INFINITY, -1])(
+    "define and update reject rollout weight %s (flag-level and rule-level)",
+    async (weight) => {
+      const t = setup();
+      const bad = { splits: [{ value: "a", weight }, { value: "b", weight: 1 }] };
+      await expect(
+        t.mutation(api.example.define, { key: "f", value: "a", rollout: bad }),
+      ).rejects.toThrow(/INVALID_ARGUMENT/);
+      await expect(
+        t.mutation(api.example.define, {
+          key: "f",
+          value: "a",
+          rules: [{ conditions: [], rollout: bad }],
+        }),
+      ).rejects.toThrow(/INVALID_ARGUMENT/);
+      await t.mutation(api.example.define, { key: "ok", value: "a" });
+      await expect(
+        t.mutation(api.example.update, { key: "ok", rollout: bad }),
+      ).rejects.toThrow(/INVALID_ARGUMENT/);
+      await expect(
+        t.mutation(api.example.update, {
+          key: "ok",
+          rules: [{ conditions: [], rollout: bad }],
+        }),
+      ).rejects.toThrow(/INVALID_ARGUMENT/);
+      expect((await t.query(api.example.get, { key: "f" })) ?? null).toBeNull();
+    },
+  );
+
+  test("zero weights are still accepted", async () => {
+    const t = setup();
+    await t.mutation(api.example.define, {
+      key: "z",
+      value: "a",
+      rollout: { splits: [{ value: "b", weight: 0 }] },
+    });
+    expect((await t.query(api.example.evaluate, { key: "z", context: { subjectRef: "u" } })).value).toBe("a");
+  });
+});

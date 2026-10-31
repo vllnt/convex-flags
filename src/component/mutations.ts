@@ -1,14 +1,47 @@
-import { v } from "convex/values";
+import { ConvexError, v, type Infer } from "convex/values";
 import { mutation } from "./_generated/server.js";
 import type { Doc } from "./_generated/dataModel.js";
 import type { MutationCtx } from "./_generated/server.js";
 import { rollout, rule, variant, variantValue } from "./validators.js";
+
+type Rollout = Infer<typeof rollout>;
+type Rule = Infer<typeof rule>;
 
 async function findByKey(ctx: MutationCtx, key: string): Promise<Doc<"flags"> | null> {
   return await ctx.db
     .query("flags")
     .withIndex("by_key", (q) => q.eq("key", key))
     .unique();
+}
+
+function invalidArgument(message: string): never {
+  throw new ConvexError({ code: "INVALID_ARGUMENT", message });
+}
+
+/** Reject empty identifiers: an empty key or subject ref can never be targeted
+ * meaningfully and would store an unreachable row. */
+function assertNonEmpty(fields: Record<string, string>): void {
+  for (const [name, value] of Object.entries(fields)) {
+    if (value === "") {
+      invalidArgument(`${name} must be non-empty`);
+    }
+  }
+}
+
+/** Reject rollout weights that cannot bucket: NaN, infinite, or negative. Zero
+ * is allowed (it excludes a split). */
+function assertRollouts(
+  rollouts: Array<Rollout | undefined>,
+  rules: Rule[] | undefined,
+): void {
+  const all = [...rollouts, ...(rules ?? []).map((r) => r.rollout)];
+  for (const r of all) {
+    for (const { weight } of r?.splits ?? []) {
+      if (!Number.isFinite(weight) || weight < 0) {
+        invalidArgument("rollout weights must be finite and non-negative");
+      }
+    }
+  }
 }
 
 /** Throws the component's single code-tagged error. Returns `never` so callers
@@ -32,6 +65,8 @@ export const define = mutation({
   },
   returns: v.id("flags"),
   handler: async (ctx, args) => {
+    assertNonEmpty({ key: args.key });
+    assertRollouts([args.rollout], args.rules);
     const now = Date.now();
     const existing = await findByKey(ctx, args.key);
     if (existing !== null) {
@@ -75,6 +110,8 @@ export const update = mutation({
   },
   returns: v.null(),
   handler: async (ctx, args) => {
+    assertNonEmpty({ key: args.key });
+    assertRollouts([args.rollout], args.rules);
     const flag = await findByKey(ctx, args.key);
     if (flag === null) {
       flagNotFound();
@@ -101,6 +138,7 @@ export const update = mutation({
 });
 
 async function setValue(ctx: MutationCtx, key: string, value: boolean): Promise<void> {
+  assertNonEmpty({ key });
   const flag = await findByKey(ctx, key);
   if (flag === null) {
     flagNotFound();
@@ -133,6 +171,7 @@ async function setStatus(
   key: string,
   status: "active" | "archived",
 ): Promise<void> {
+  assertNonEmpty({ key });
   const flag = await findByKey(ctx, key);
   if (flag === null) {
     flagNotFound();
@@ -166,6 +205,7 @@ export const remove = mutation({
   args: { key: v.string() },
   returns: v.null(),
   handler: async (ctx, args) => {
+    assertNonEmpty({ key: args.key });
     const flag = await findByKey(ctx, args.key);
     if (flag === null) {
       flagNotFound();
@@ -187,6 +227,7 @@ export const setOverride = mutation({
   args: { key: v.string(), subjectRef: v.string(), value: variantValue },
   returns: v.null(),
   handler: async (ctx, args) => {
+    assertNonEmpty({ key: args.key, subjectRef: args.subjectRef });
     const flag = await findByKey(ctx, args.key);
     if (flag === null) {
       flagNotFound();
@@ -216,6 +257,7 @@ export const clearOverride = mutation({
   args: { key: v.string(), subjectRef: v.string() },
   returns: v.null(),
   handler: async (ctx, args) => {
+    assertNonEmpty({ key: args.key, subjectRef: args.subjectRef });
     const existing = await ctx.db
       .query("overrides")
       .withIndex("by_key_subject", (q) =>

@@ -124,7 +124,7 @@ Use `pnpm build:codegen` (or `npx convex dev --once`) to regenerate the checked-
 - `define` fully replaces a definition; `update` patches only the supplied fields. `enable`/`disable`
   are boolean convenience (set the value to `true`/`false`) — multivariate flags use `define`/`update`.
 - No bare `v.any()` in component code; the engine in `shared.ts` stays pure.
-- Errors are code-tagged: missing flags throw `FLAG_NOT_FOUND`.
+- Errors are code-tagged: missing flags throw `FLAG_NOT_FOUND`; empty keys/refs and invalid rollout weights throw `ConvexError` `INVALID_ARGUMENT`.
 
 ## Docs sync
 
