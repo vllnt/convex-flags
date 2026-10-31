@@ -4,10 +4,11 @@
   "description": "Feature flags as a Convex component — variants, targeting, percentage rollouts, and per-subject overrides, evaluated on the backend and streamed live to clients.",
   "license": "MIT",
   "type": "module",
-  "packageManager": "pnpm@9.15.4",
+  "packageManager": "pnpm@10.34.8",
   "files": [
     "dist",
-    "src"
+    "src",
+    "!src/**/*.test.*"
   ],
   "exports": {
     "./package.json": "./package.json",
@@ -48,9 +49,6 @@
     "test:watch": "vitest --typecheck --clearScreen false",
     "test:coverage": "vitest run --coverage --coverage.reporter=text",
     "preversion": "pnpm install --frozen-lockfile && pnpm build && pnpm test:coverage && pnpm typecheck",
-    "prepublishOnly": "npm whoami || npm login",
-    "alpha": "npm version prerelease --preid alpha && npm publish --tag alpha && git push --follow-tags",
-    "release": "npm version patch && npm publish && git push --follow-tags",
     "check:agents": "node -e \"const f=require('node:fs');if(!f.existsSync('AGENTS.md')||f.existsSync('CLAUDE.md')||f.existsSync('.claude'))process.exit(1)\"",
     "codegen": "pnpm convex codegen --component-dir ./src/component"
   },
@@ -84,6 +82,13 @@
     "vitest": "^5.0.5"
   },
   "pnpm": {
+    "minimumReleaseAge": 10080,
+    "minimumReleaseAgeExclude": [
+      "@vllnt/*"
+    ],
+    "ignoredBuiltDependencies": [
+      "esbuild"
+    ],
     "overrides": {
       "@asamuzakjp/css-color": "7.1.7",
       "@csstools/css-color-parser": "4.2.6",
