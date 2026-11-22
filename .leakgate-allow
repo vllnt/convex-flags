@@ -1,0 +1,11 @@
+# Paths whose added lines may include structural privacy patterns (the
+# patterns themselves, not private values). Matched against leak-gate hit lines.
+\.privacy-denylist
+\.privacy-allowlist
+scripts/check-commit-emails\.sh
+scripts/privacy-denylist\.sh
+scripts/test-privacy-denylist\.sh
+scripts/test-check-commit-emails\.sh
+scripts/check-package-contents\.sh
+scripts/test-check-package-contents\.sh
+\.github/workflows/privacy-guard\.yml

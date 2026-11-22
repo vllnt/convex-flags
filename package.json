@@ -8,8 +8,8 @@
   "files": [
     "dist",
     "src",
-    "!src/**/*.test.*"
-  ],
+    "!src/**/*.test.*",
+    "!src/**/*.spec.*"],
   "exports": {
     "./package.json": "./package.json",
     ".": {

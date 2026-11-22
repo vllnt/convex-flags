@@ -65,6 +65,9 @@ jobs:
           registry-url: https://registry.npmjs.org
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
+      - name: Check package contents
+        working-directory: ${{ github.workspace }}
+        run: bash scripts/check-package-contents.sh
       - name: Publish canary
         run: |
           set -euo pipefail
@@ -118,6 +121,9 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
 
+      - name: Check package contents
+        working-directory: ${{ github.workspace }}
+        run: bash scripts/check-package-contents.sh
       - name: Publish to npm
         run: |
           set -euo pipefail
