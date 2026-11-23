@@ -3,7 +3,6 @@ import { convexTest } from "convex-test";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { api } from "./component/_generated/api.js";
 import schema from "./component/schema.js";
-import { REMOVE_BATCH } from "./shared.js";
 
 const modules = import.meta.glob("./component/**/*.ts");
 
@@ -161,44 +160,23 @@ describe("flags component — exact write counts", () => {
   });
 });
 
-describe("flags component — bounded remove", () => {
-  test("remove with few overrides deletes everything in one pass, nothing scheduled", async () => {
+describe("flags component — numeric equality", () => {
+  test("-0 versus 0 and NaN compare by identity, including inside rules", async () => {
     const t = setup();
-    await t.mutation(api.mutations.define, { key: "f", value: true });
-    await t.mutation(api.mutations.setOverride, { key: "f", subjectRef: "u", value: false });
-    await t.mutation(api.mutations.remove, { key: "f" });
-    const state = await t.run(async (ctx) => ({
-      flags: await ctx.db.query("flags").collect(),
-      overrides: await ctx.db.query("overrides").collect(),
-      scheduled: await ctx.db.system.query("_scheduled_functions").collect(),
-    }));
-    expect(state).toEqual({ flags: [], overrides: [], scheduled: [] });
-  });
-
-  test("remove with more overrides than one batch drains them over continuations", async () => {
-    const t = setup();
-    await t.mutation(api.mutations.define, { key: "f", value: true });
-    await t.mutation(api.mutations.define, { key: "other", value: true });
-    await t.run(async (ctx) => {
-      for (let i = 0; i < REMOVE_BATCH + 5; i++) {
-        await ctx.db.insert("overrides", { key: "f", subjectRef: `u${i}`, value: false, createdAt: 0 });
-      }
-      await ctx.db.insert("overrides", { key: "other", subjectRef: "u0", value: false, createdAt: 0 });
+    const nanRules = [{ conditions: [{ attribute: "score", op: "gt" as const, values: [Number.NaN] }], value: 1 }];
+    await t.mutation(api.mutations.define, { key: "n", value: 0, rules: nanRules });
+    await t.mutation(api.mutations.setOverride, { key: "n", subjectRef: "u", value: Number.NaN });
+    const repeats = await writesDuring(async () => {
+      await t.mutation(api.mutations.define, { key: "n", value: 0, rules: nanRules });
+      await t.mutation(api.mutations.setOverride, { key: "n", subjectRef: "u", value: Number.NaN });
     });
-    await t.mutation(api.mutations.remove, { key: "f" });
-    const mid = await t.run(async (ctx) => ({
-      flag: await ctx.db.query("flags").withIndex("by_key", (q) => q.eq("key", "f")).unique(),
-      overrides: (await ctx.db.query("overrides").collect()).length,
-      scheduled: (await ctx.db.system.query("_scheduled_functions").collect()).length,
-    }));
-    expect(mid.flag).not.toBeNull();
-    expect(mid.overrides).toBe(6);
-    expect(mid.scheduled).toBe(1);
-    await t.finishAllScheduledFunctions(vi.runAllTimers);
-    const end = await t.run(async (ctx) => ({
-      flags: (await ctx.db.query("flags").collect()).map((f) => f.key),
-      overrides: (await ctx.db.query("overrides").collect()).map((o) => o.key),
-    }));
-    expect(end).toEqual({ flags: ["other"], overrides: ["other"] });
+    expect(repeats).toEqual([]);
+    const signed = await writesDuring(async () => {
+      await t.mutation(api.mutations.update, { key: "n", value: -0 });
+      await t.mutation(api.mutations.setOverride, { key: "n", subjectRef: "u", value: -0 });
+    });
+    expect(signed).toEqual(["patch:flags", "patch:overrides"]);
+    const flag = await t.query(api.queries.get, { key: "n" });
+    expect(Object.is(flag?.value, -0)).toBe(true);
   });
 });

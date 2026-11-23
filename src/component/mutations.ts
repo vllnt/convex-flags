@@ -1,10 +1,8 @@
 import { ConvexError, v, type Infer } from "convex/values";
-import { api } from "./_generated/api.js";
 import { mutation } from "./_generated/server.js";
 import type { Doc } from "./_generated/dataModel.js";
 import type { MutationCtx } from "./_generated/server.js";
 import { rollout, rule, variant, variantValue } from "./validators.js";
-import { REMOVE_BATCH } from "../shared.js";
 
 type Rollout = Infer<typeof rollout>;
 type Rule = Infer<typeof rule>;
@@ -54,7 +52,7 @@ function sameValue(a: unknown, b: unknown): boolean {
     const keys = new Set([...Object.keys(a), ...Object.keys(b)]);
     return [...keys].every((k) => sameValue(a[k], b[k]));
   }
-  return a === b;
+  return Object.is(a, b);
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -250,13 +248,9 @@ export const remove = mutation({
     const overrides = await ctx.db
       .query("overrides")
       .withIndex("by_key_subject", (q) => q.eq("key", args.key))
-      .take(REMOVE_BATCH);
+      .collect();
     for (const override of overrides) {
       await ctx.db.delete("overrides", override._id);
-    }
-    if (overrides.length === REMOVE_BATCH) {
-      await ctx.scheduler.runAfter(0, api.mutations.remove, { key: args.key });
-      return null;
     }
     await ctx.db.delete("flags", flag._id);
     return null;
@@ -280,7 +274,7 @@ export const setOverride = mutation({
       )
       .unique();
     if (existing !== null) {
-      if (existing.value !== args.value) {
+      if (!Object.is(existing.value, args.value)) {
         await ctx.db.patch("overrides", existing._id, { value: args.value });
       }
     } else {
