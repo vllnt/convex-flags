@@ -1,8 +1,10 @@
 import { ConvexError, v, type Infer } from "convex/values";
+import { api } from "./_generated/api.js";
 import { mutation } from "./_generated/server.js";
 import type { Doc } from "./_generated/dataModel.js";
 import type { MutationCtx } from "./_generated/server.js";
 import { rollout, rule, variant, variantValue } from "./validators.js";
+import { REMOVE_BATCH } from "../shared.js";
 
 type Rollout = Infer<typeof rollout>;
 type Rule = Infer<typeof rule>;
@@ -46,6 +48,46 @@ function assertRollouts(
 
 /** Throws the component's single code-tagged error. Returns `never` so callers
  * narrow the flag to non-null after the guard. */
+function sameValue(a: unknown, b: unknown): boolean {
+  if (Array.isArray(a) && Array.isArray(b)) {
+    return a.length === b.length && a.every((item, i) => sameValue(item, b[i]));
+  }
+  if (isRecord(a) && isRecord(b)) {
+    const keys = new Set([...Object.keys(a), ...Object.keys(b)]);
+    return [...keys].every((k) => sameValue(a[k], b[k]));
+  }
+  return a === b;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+const FLAG_FIELDS = ["value", "description", "variants", "rules", "rollout"] as const;
+
+function changedFields(
+  flag: Doc<"flags">,
+  fields: Partial<Pick<Doc<"flags">, "value" | "description" | "variants" | "rules" | "rollout">>,
+): Partial<Doc<"flags">> {
+  const patch: Partial<Doc<"flags">> = {};
+  for (const name of FLAG_FIELDS) {
+    if (name in fields && !sameValue(flag[name], fields[name])) {
+      Object.assign(patch, { [name]: fields[name] });
+    }
+  }
+  return patch;
+}
+
+async function patchIfChanged(
+  ctx: MutationCtx,
+  flag: Doc<"flags">,
+  patch: Partial<Doc<"flags">>,
+): Promise<void> {
+  if (Object.keys(patch).length > 0) {
+    await ctx.db.patch("flags", flag._id, { ...patch, updatedAt: Date.now() });
+  }
+}
+
 function flagNotFound(): never {
   throw new Error("FLAG_NOT_FOUND");
 }
@@ -70,14 +112,17 @@ export const define = mutation({
     const now = Date.now();
     const existing = await findByKey(ctx, args.key);
     if (existing !== null) {
-      await ctx.db.patch("flags", existing._id, {
-        value: args.value,
-        description: args.description,
-        variants: args.variants,
-        rules: args.rules,
-        rollout: args.rollout,
-        updatedAt: now,
-      });
+      await patchIfChanged(
+        ctx,
+        existing,
+        changedFields(existing, {
+          value: args.value,
+          description: args.description,
+          variants: args.variants,
+          rules: args.rules,
+          rollout: args.rollout,
+        }),
+      );
       return existing._id;
     }
     return await ctx.db.insert("flags", {
@@ -116,23 +161,13 @@ export const update = mutation({
     if (flag === null) {
       flagNotFound();
     }
-    const patch: Partial<Doc<"flags">> = { updatedAt: Date.now() };
-    if (args.value !== undefined) {
-      patch.value = args.value;
+    const fields: Parameters<typeof changedFields>[1] = {};
+    for (const name of FLAG_FIELDS) {
+      if (args[name] !== undefined) {
+        Object.assign(fields, { [name]: args[name] });
+      }
     }
-    if (args.description !== undefined) {
-      patch.description = args.description;
-    }
-    if (args.variants !== undefined) {
-      patch.variants = args.variants;
-    }
-    if (args.rules !== undefined) {
-      patch.rules = args.rules;
-    }
-    if (args.rollout !== undefined) {
-      patch.rollout = args.rollout;
-    }
-    await ctx.db.patch("flags", flag._id, patch);
+    await patchIfChanged(ctx, flag, changedFields(flag, fields));
     return null;
   },
 });
@@ -143,7 +178,7 @@ async function setValue(ctx: MutationCtx, key: string, value: boolean): Promise<
   if (flag === null) {
     flagNotFound();
   }
-  await ctx.db.patch("flags", flag._id, { value, updatedAt: Date.now() });
+  await patchIfChanged(ctx, flag, changedFields(flag, { value }));
 }
 
 /** Turn a boolean flag on (set its value to `true`). */
@@ -176,7 +211,9 @@ async function setStatus(
   if (flag === null) {
     flagNotFound();
   }
-  await ctx.db.patch("flags", flag._id, { status, updatedAt: Date.now() });
+  if (flag.status !== status) {
+    await ctx.db.patch("flags", flag._id, { status, updatedAt: Date.now() });
+  }
 }
 
 /** Archive a flag: reversible retirement. Evaluation skips targeting and serves
@@ -213,9 +250,13 @@ export const remove = mutation({
     const overrides = await ctx.db
       .query("overrides")
       .withIndex("by_key_subject", (q) => q.eq("key", args.key))
-      .collect();
+      .take(REMOVE_BATCH);
     for (const override of overrides) {
       await ctx.db.delete("overrides", override._id);
+    }
+    if (overrides.length === REMOVE_BATCH) {
+      await ctx.scheduler.runAfter(0, api.mutations.remove, { key: args.key });
+      return null;
     }
     await ctx.db.delete("flags", flag._id);
     return null;
@@ -239,7 +280,9 @@ export const setOverride = mutation({
       )
       .unique();
     if (existing !== null) {
-      await ctx.db.patch("overrides", existing._id, { value: args.value });
+      if (existing.value !== args.value) {
+        await ctx.db.patch("overrides", existing._id, { value: args.value });
+      }
     } else {
       await ctx.db.insert("overrides", {
         key: args.key,

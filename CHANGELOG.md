@@ -20,6 +20,12 @@ All notable changes to this project are documented here. The format is based on
 
 ### Changed
 
+- Management mutations (`define`, `update`, `enable`, `disable`, `archive`, `restore`,
+  `setOverride`) skip the write when nothing changed, so idempotent re-defines no longer bump
+  `updatedAt` or re-run every `evaluate`/`all` subscription.
+- `remove` deletes overrides in bounded batches of 1000 and continues in a scheduled pass when more
+  remain; the flag is deleted with the last batch, so flags with very many overrides no longer exceed
+  transaction limits.
 - Upgrade dev tooling (vitest 5, vite 8.3, convex 1.48, convex-test 0.0.65, prettier 3.9.10) and
   drop transitive-dependency overrides the lockfile no longer needs.
 - Adopt pnpm 10 with a release-age gate; releases are published only from CI with npm trusted

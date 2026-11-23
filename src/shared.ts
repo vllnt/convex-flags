@@ -12,6 +12,8 @@
  * Why an evaluation returned the value it did. Stable string codes so hosts can
  * branch on the reason without parsing prose.
  */
+export const REMOVE_BATCH = 1000;
+
 export const EVAL_REASON = {
   /** Served the flag's fallthrough value — no rule or rollout matched. */
   flag: "flag",
