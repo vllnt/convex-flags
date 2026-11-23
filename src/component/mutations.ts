@@ -46,8 +46,6 @@ function assertRollouts(
   }
 }
 
-/** Throws the component's single code-tagged error. Returns `never` so callers
- * narrow the flag to non-null after the guard. */
 function sameValue(a: unknown, b: unknown): boolean {
   if (Array.isArray(a) && Array.isArray(b)) {
     return a.length === b.length && a.every((item, i) => sameValue(item, b[i]));
@@ -88,6 +86,8 @@ async function patchIfChanged(
   }
 }
 
+/** Throws the component's single code-tagged error. Returns `never` so callers
+ * narrow the flag to non-null after the guard. */
 function flagNotFound(): never {
   throw new Error("FLAG_NOT_FOUND");
 }

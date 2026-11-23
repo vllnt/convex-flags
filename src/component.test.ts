@@ -7,6 +7,44 @@ import { REMOVE_BATCH } from "./shared.js";
 
 const modules = import.meta.glob("./component/**/*.ts");
 
+const writes = vi.hoisted((): string[] => []);
+
+vi.mock("./component/_generated/server.js", async (importOriginal) => {
+  const original = await importOriginal<typeof import("./component/_generated/server.js")>();
+  const WRITE_METHODS = new Set(["insert", "patch", "replace", "delete"]);
+  function countingDb<T extends object>(db: T): T {
+    return new Proxy(db, {
+      get(target, prop, receiver) {
+        const value: unknown = Reflect.get(target, prop, receiver);
+        if (typeof value !== "function") {
+          return value;
+        }
+        return (...callArgs: unknown[]) => {
+          if (typeof prop === "string" && WRITE_METHODS.has(prop)) {
+            writes.push(`${prop}:${String(callArgs[0])}`);
+          }
+          return Reflect.apply(value, target, callArgs);
+        };
+      },
+    });
+  }
+  const mutation: typeof original.mutation = (definition) => {
+    if (typeof definition === "function") {
+      return original.mutation((ctx, args) => definition({ ...ctx, db: countingDb(ctx.db) }, args));
+    }
+    return original.mutation({
+      ...definition,
+      handler: (ctx, args) => definition.handler({ ...ctx, db: countingDb(ctx.db) }, args),
+    });
+  };
+  return { ...original, mutation };
+});
+
+function writesDuring<T>(run: () => Promise<T>): Promise<string[]> {
+  writes.length = 0;
+  return run().then(() => [...writes]);
+}
+
 function setup() {
   return convexTest(schema, modules);
 }
@@ -98,6 +136,28 @@ describe("flags component — no-op writes are skipped", () => {
       value: false,
       reason: "override",
     });
+  });
+});
+
+describe("flags component — exact write counts", () => {
+  test("no-op management calls write nothing; real changes patch once", async () => {
+    const t = setup();
+    await t.mutation(api.mutations.define, { key: "f", value: true, rules: RULES });
+    await t.mutation(api.mutations.setOverride, { key: "f", subjectRef: "u", value: true });
+    const noops = await writesDuring(async () => {
+      await t.mutation(api.mutations.define, { key: "f", value: true, rules: RULES });
+      await t.mutation(api.mutations.update, { key: "f", value: true });
+      await t.mutation(api.mutations.enable, { key: "f" });
+      await t.mutation(api.mutations.restore, { key: "f" });
+      await t.mutation(api.mutations.setOverride, { key: "f", subjectRef: "u", value: true });
+    });
+    expect(noops).toEqual([]);
+    const changes = await writesDuring(async () => {
+      await t.mutation(api.mutations.disable, { key: "f" });
+      await t.mutation(api.mutations.archive, { key: "f" });
+      await t.mutation(api.mutations.setOverride, { key: "f", subjectRef: "u", value: false });
+    });
+    expect(changes).toEqual(["patch:flags", "patch:flags", "patch:overrides"]);
   });
 });
 
