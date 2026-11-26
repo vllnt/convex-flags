@@ -2,7 +2,7 @@
 
 > Feature flags as a Convex component — variants, targeting, percentage rollouts, and per-subject overrides, evaluated on the backend and streamed live to clients.
 
-`@vllnt/convex-flags` is a publishable Convex component targeting `convex@^1.45.0` on current main/canary.
+`@vllnt/convex-flags` is a publishable Convex component targeting `convex@^1.45.0`.
 It stores feature flags in its own sandboxed tables, keyed by an opaque host-chosen
 string. A flag value is a typed primitive (`boolean | string | number`) and supports
 attribute-targeting rules, weighted percentage rollouts with stable per-subject
@@ -11,21 +11,28 @@ Convex queries, so changes stream to connected clients over the same reactive
 subscription mechanism as app data. The host owns auth and gates every management call.
 An optional `./react` entry ships `useFlag`/`useFlags` hooks; `react` is an optional peer.
 
+## For coding agents
+
+The docs are bundled in the package at `node_modules/@vllnt/convex-flags/docs/` and match
+the installed version. Read them before writing code against this package.
+
 ## Docs
 
-- [README](README.md): Project overview, installation, usage examples, architecture
-- [API Reference](docs/API.md): Public class methods, return shapes, input validation
-- [Changelog](CHANGELOG.md): Version history and release notes
-- [Contributing](CONTRIBUTING.md): Development setup, validation commands, release workflow
+- [README](./README.md): Project overview, installation, usage examples, architecture
+- [API Reference](./docs/API.md): Public class methods, return shapes, input validation
+- [Changelog](./CHANGELOG.md): Version history and release notes
+- [License](./LICENSE): MIT license
 
-## Examples
+## Ecosystem
 
-- [Example component wrapper](example/convex/example.ts): Host-app wrapper functions
-- [Example tests](example/convex/example.test.ts): End-to-end usage coverage with `convex-test`
+- [vllnt oss](https://oss.vllnt.com/llms.txt): Index of the other vllnt open-source packages
 
 ## Optional
 
-- [AGENTS](AGENTS.md): Canonical agent instructions for this repository
-- [Security Policy](SECURITY.md): Vulnerability reporting policy
-- [Code of Conduct](CODE_OF_CONDUCT.md): Community participation guidelines
-- [License](LICENSE): MIT license
+These files are on GitHub and are not bundled in the package.
+
+- [Example component wrapper](https://github.com/vllnt/convex-flags/blob/main/example/convex/example.ts): Host-app wrapper functions
+- [Example tests](https://github.com/vllnt/convex-flags/blob/main/example/convex/example.test.ts): End-to-end usage coverage with `convex-test`
+- [Contributing](https://github.com/vllnt/convex-flags/blob/main/CONTRIBUTING.md): Development setup, validation commands, release workflow
+- [Security Policy](https://github.com/vllnt/convex-flags/blob/main/SECURITY.md): Vulnerability reporting policy
+- [Code of Conduct](https://github.com/vllnt/convex-flags/blob/main/CODE_OF_CONDUCT.md): Community participation guidelines
