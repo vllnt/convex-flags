@@ -1,8 +1,11 @@
 # API Reference — @vllnt/convex-flags
 
-**Compatibility (current main/canary):** `convex@^1.45.0`
+**Compatibility:** `convex@^1.45.0`. `react@^18 || ^19` is an optional peer,
+needed only for the `./react` entry.
 
-The public surface is the `Flags` client class (`src/client/index.ts`).
+This file ships inside the package and describes the installed version.
+
+The main surface is the `Flags` client class (`src/client/index.ts`).
 Construct it once with the mounted component reference, then call its methods
 from host queries/mutations/actions. The host owns auth — gate the management
 methods (`define`, `update`, `enable`, `disable`, `archive`, `restore`,
@@ -18,6 +21,16 @@ const flags = new Flags(components.flags);
 A flag value is a typed primitive: `boolean | string | number` (the
 `VariantValue` type). A boolean flag is the two-variant case; string/number
 flags are multivariate.
+
+## Entry points
+
+| Import path                                | Exports                                                                                                                                                                                      |
+| ------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `@vllnt/convex-flags`                      | The `Flags` class, and the types `FlagsComponent`, `EvalContext`, `EvalOptions`, `FlagDefinition`, `FlagDoc`, `FlagEvaluation`, `FlagUpdate`, `Rollout`, `Rule`, `Variant`, `VariantValue` |
+| `@vllnt/convex-flags/convex.config`        | The component definition, passed to `app.use(flags)` (also importable as `./convex.config.js`)                                                                                                  |
+| `@vllnt/convex-flags/react`                | `useFlag`, `useFlags`, and the types `UseFlagOptions`, `EvaluateRef`, `AllRef`, `EvalContext`, `FlagEvaluation`, `VariantValue` (optional; needs `react`)                                  |
+| `@vllnt/convex-flags/test`                 | `register(t, name = "flags")` — mounts the component in a `convex-test` instance (TypeScript source)                                                                                         |
+| `@vllnt/convex-flags/_generated/component` | The `ComponentApi` type only (also importable as `./_generated/component.js`)                                                                                                                |
 
 ## Mutations
 
@@ -60,7 +73,9 @@ flags are multivariate.
 
 An **unknown key** returns the caller `default` (reason `default`) or `false`
 (reason `unknown`). A rollout that cannot bucket (no `subjectRef`/`by`
-attribute, or no positive-weight split) falls through to the flag value.
+attribute, or no positive-weight split) yields no value, so the flag value
+(reason `flag`) is served. When that happens inside a matched rule, evaluation
+stops there: later rules and the flag-level rollout are not tried.
 
 ## Targeting operators
 
@@ -85,9 +100,19 @@ stable subject so a given subject always resolves to the same value:
 ```
 
 `by` names the context attribute to bucket by; when omitted,
-`context.subjectRef` is used. Weights are relative (normalized across splits).
+`context.subjectRef` is used. Weights are relative: a subject's bucket is its integer
+hash modulo the sum of the positive weights, so use whole-number weights
+(for example percentages). Fractional weights do not split evenly; `0.5` / `0.5`
+sends every subject to the first split.
 
 ## Types
+
+Import these by name from `@vllnt/convex-flags` (see Entry points).
+`AttributeValue`, `EvalReason`, `Condition` and `Split` are shown for reference
+and are not exported by name: derive them with `FlagEvaluation["reason"]`,
+`Rule["conditions"][number]` and `Rollout["splits"][number]`; `AttributeValue`
+is the same union as `VariantValue`. `FlagsComponent` is the constructor
+argument type; `components.flags` satisfies it.
 
 ```ts
 type VariantValue = boolean | string | number;
@@ -123,7 +148,7 @@ interface Rollout {
 
 interface Rule {
   conditions: Condition[]; // AND; an empty list is a catch-all
-  value?: VariantValue;
+  value?: VariantValue; // wins over `rollout` when both are set
   rollout?: Rollout;
 }
 
@@ -207,3 +232,14 @@ const checkout = useFlag(api.flags.evaluate, "new-checkout", {
 | ------------------------------- | ----------------------------------------- | --------------------------------------------- |
 | `useFlag(query, key, options?)` | evaluate ref, `string`, `UseFlagOptions?` | `FlagEvaluation \| undefined`                 |
 | `useFlags(query, context?)`     | all ref, `EvalContext?`                   | `Record<string, FlagEvaluation> \| undefined` |
+
+```ts
+interface UseFlagOptions {
+  context?: EvalContext;
+  default?: VariantValue; // served (reason `default`) when the key is unknown
+}
+```
+
+`EvaluateRef` and `AllRef` are the types of the host's public `evaluate` and
+`all` query references — queries that take the same args and return the same
+shapes as the component's `evaluate` and `all`.

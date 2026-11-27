@@ -28,6 +28,14 @@ All notable changes to this project are documented here. The format is based on
 - Adopt pnpm 10 with a release-age gate; releases are published only from CI with npm trusted
   publishing and provenance.
 - Document the component error codes and how to use `/test` in a consuming app.
+- The package now ships `docs/API.md`, `CHANGELOG.md` and `llms.txt`, so the docs in
+  `node_modules/@vllnt/convex-flags/` match the installed version. `llms.txt` links to these
+  files with relative paths, and a `test:package` CI check fails when a required file is missing
+  from the tarball or a contributor-only file is included.
+- `docs/API.md` lists every entry point and its exports, the `./react` option and ref types, and
+  how a rollout that cannot bucket inside a matched rule falls back to the flag value.
+- Canary builds publish on every qualifying push to `main` (dist-tag `canary` only, never
+  `latest`), including docs-only changes to the shipped files.
 
 ## [0.1.0] - 2026-09-01
 

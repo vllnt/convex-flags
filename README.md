@@ -53,10 +53,10 @@ app.use(flags);
 export default app;
 ```
 
-Peer dependency on current `main`/canary: `convex@^1.45.0`. `react` is an
-optional peer dependency, needed only for the `./react` entry.
+Peer dependency: `convex@^1.45.0`. `react` is an optional peer dependency,
+needed only for the `./react` entry.
 
-The untagged install selects npm `latest` (0.1.0); `@canary` tracks `main`.
+The untagged install selects the npm `latest` release; `@canary` tracks `main`.
 Check the installed version's peer range before upgrading.
 
 For isolated flag sets, mount twice with names, for example
@@ -64,6 +64,13 @@ For isolated flag sets, mount twice with names, for example
 `app.use(flags, { name: "mobileFlags" })`, then construct clients with
 `components.webFlags` and `components.mobileFlags`. Run `npx convex dev` after
 mounting to generate these references.
+
+## For coding agents
+
+The docs are bundled in the package at
+`node_modules/@vllnt/convex-flags/docs/` (`llms.txt` and `CHANGELOG.md` sit at
+the package root) and match the installed version. Read them before writing code
+against this package.
 
 ## Usage
 
@@ -125,7 +132,7 @@ export const define = internalMutation({
 });
 
 // Wrap the rest the same way — `update`, `enable`, `disable`, `archive`,
-// `restore`, `setOverride`, `clearOverride` — each gated then delegated.
+// `restore`, `remove`, `setOverride`, `clearOverride` — each gated then delegated.
 ```
 
 ```ts
@@ -254,6 +261,21 @@ const t = convexTest(schema, import.meta.glob("./**/*.ts"));
 register(t);
 ```
 
+## Related packages
+
+- [`@vllnt/convex-experiments`](https://www.npmjs.com/package/@vllnt/convex-experiments) —
+  A/B experiments with sticky variant assignment stored per subject and deduped
+  exposure counts per variant. Use flags to gate or roll out a feature (a flag
+  rollout hashes the subject and stores nothing); use experiments to compare
+  variants and read exposure counts.
+- [`@vllnt/convex-analytics`](https://www.npmjs.com/package/@vllnt/convex-analytics) —
+  events, funnels and retention. Flags record no events or outcomes; use
+  analytics to measure a flagged feature, for example by sending the evaluated
+  value as an event property.
+- [`@vllnt/convex-events`](https://www.npmjs.com/package/@vllnt/convex-events) —
+  append-only per-subject event ledger. Flags keep no change history; record
+  changes from your management wrappers into events for an audit trail.
+
 ## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md).
@@ -263,11 +285,12 @@ See [CONTRIBUTING.md](CONTRIBUTING.md).
 Built by [bntvllnt](https://github.com/bntvllnt) ·
 [bntvllnt.com](https://bntvllnt.com) · [X @bntvllnt](https://x.com/bntvllnt)
 
-Part of the [@vllnt](https://github.com/vllnt) Convex component fleet —
-[vllnt.com](https://vllnt.com)
-
 If this is useful, [sponsor the work](https://github.com/sponsors/bntvllnt).
 
 ## License
 
 MIT
+
+---
+
+Part of vllnt oss: https://oss.vllnt.com
