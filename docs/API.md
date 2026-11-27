@@ -26,11 +26,11 @@ flags are multivariate.
 
 | Import path                                | Exports                                                                                                                                                                                      |
 | ------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `@vllnt/convex-flags`                      | `Flags`, `FlagsComponent`, and the types `EvalContext`, `EvalOptions`, `FlagDefinition`, `FlagDoc`, `FlagEvaluation`, `FlagUpdate`, `Rollout`, `Rule`, `Variant`, `VariantValue`              |
-| `@vllnt/convex-flags/convex.config`        | The component definition, passed to `app.use(flags)`                                                                                                                                         |
-| `@vllnt/convex-flags/react`                | `useFlag`, `useFlags`, and the types `UseFlagOptions`, `EvaluateRef`, `AllRef` (optional; needs `react`)                                                                                     |
+| `@vllnt/convex-flags`                      | The `Flags` class, and the types `FlagsComponent`, `EvalContext`, `EvalOptions`, `FlagDefinition`, `FlagDoc`, `FlagEvaluation`, `FlagUpdate`, `Rollout`, `Rule`, `Variant`, `VariantValue` |
+| `@vllnt/convex-flags/convex.config`        | The component definition, passed to `app.use(flags)` (also importable as `./convex.config.js`)                                                                                                  |
+| `@vllnt/convex-flags/react`                | `useFlag`, `useFlags`, and the types `UseFlagOptions`, `EvaluateRef`, `AllRef`, `EvalContext`, `FlagEvaluation`, `VariantValue` (optional; needs `react`)                                  |
 | `@vllnt/convex-flags/test`                 | `register(t, name = "flags")` — mounts the component in a `convex-test` instance (TypeScript source)                                                                                         |
-| `@vllnt/convex-flags/_generated/component` | The `ComponentApi` type only                                                                                                                                                                 |
+| `@vllnt/convex-flags/_generated/component` | The `ComponentApi` type only (also importable as `./_generated/component.js`)                                                                                                                |
 
 ## Mutations
 
@@ -100,7 +100,10 @@ stable subject so a given subject always resolves to the same value:
 ```
 
 `by` names the context attribute to bucket by; when omitted,
-`context.subjectRef` is used. Weights are relative (normalized across splits).
+`context.subjectRef` is used. Weights are relative: a subject's bucket is its hash
+modulo the integer sum of the positive weights, so use whole-number weights
+(for example percentages). Fractional weights do not split evenly; `0.5` / `0.5`
+sends every subject to the first split.
 
 ## Types
 
@@ -145,7 +148,7 @@ interface Rollout {
 
 interface Rule {
   conditions: Condition[]; // AND; an empty list is a catch-all
-  value?: VariantValue;
+  value?: VariantValue; // wins over `rollout` when both are set
   rollout?: Rollout;
 }
 

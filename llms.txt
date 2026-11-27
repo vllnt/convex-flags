@@ -13,8 +13,9 @@ An optional `./react` entry ships `useFlag`/`useFlags` hooks; `react` is an opti
 
 ## For coding agents
 
-The docs are bundled in the package at `node_modules/@vllnt/convex-flags/docs/` and match
-the installed version. Read them before writing code against this package.
+The docs are bundled in the package at `node_modules/@vllnt/convex-flags/docs/` (this file,
+`README.md` and `CHANGELOG.md` sit at the package root) and match the installed version. Read
+them before writing code against this package.
 
 ## Docs
 

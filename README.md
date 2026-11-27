@@ -56,7 +56,7 @@ export default app;
 Peer dependency: `convex@^1.45.0`. `react` is an optional peer dependency,
 needed only for the `./react` entry.
 
-The untagged install selects npm `latest` (0.1.0); `@canary` tracks `main`.
+The untagged install selects the npm `latest` release; `@canary` tracks `main`.
 Check the installed version's peer range before upgrading.
 
 For isolated flag sets, mount twice with names, for example
@@ -132,7 +132,7 @@ export const define = internalMutation({
 });
 
 // Wrap the rest the same way — `update`, `enable`, `disable`, `archive`,
-// `restore`, `setOverride`, `clearOverride` — each gated then delegated.
+// `restore`, `remove`, `setOverride`, `clearOverride` — each gated then delegated.
 ```
 
 ```ts

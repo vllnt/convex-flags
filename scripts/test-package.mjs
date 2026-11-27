@@ -3,61 +3,51 @@ import { readFileSync } from "node:fs";
 import { posix } from "node:path";
 import process from "node:process";
 
-/** Files a consumer or coding agent expects inside the installed package. */
-const REQUIRED = [
-  "package.json",
-  "README.md",
-  "LICENSE",
-  "CHANGELOG.md",
-  "llms.txt",
-  "docs/API.md",
-  "dist/client/index.js",
-  "dist/client/index.d.ts",
-];
+/**
+ * Fails when the npm tarball is missing a file consumers or coding agents rely
+ * on, ships a contributor-only doc, or has an llms.txt link that does not
+ * resolve inside it. `check-package-contents.sh` covers extra files, tests and
+ * the privacy denylist; this covers what it cannot: missing files.
+ */
+const REPO_BLOB = "https://github.com/vllnt/convex-flags/blob/";
 
-/** Contributor-only paths that must never ship. */
+/** Docs shipped for coding agents, plus the standard package files. */
+const DOCS = ["package.json", "README.md", "LICENSE", "CHANGELOG.md", "llms.txt", "docs/API.md"];
+
+/** Contributor or internal docs that a widened `files` entry could ship. */
 const FORBIDDEN = [
   /^(AGENTS|CLAUDE|ROADMAP|CONTRIBUTING|SECURITY|CODE_OF_CONDUCT)\.md$/,
   /^(example|scripts|\.github|\.claude)\//,
   /^docs\/(?!API\.md$)/,
-  /\.(test|spec)\./,
 ];
 
-/** @type {unknown} */
-const metadata = JSON.parse(readFileSync("package.json", "utf8"));
-if (
-  typeof metadata !== "object" ||
-  metadata === null ||
-  !("repository" in metadata) ||
-  typeof metadata.repository !== "object" ||
-  metadata.repository === null ||
-  !("url" in metadata.repository) ||
-  typeof metadata.repository.url !== "string"
-)
-  throw new Error("package.json needs repository.url");
-const blobPrefix = `${metadata.repository.url}/blob/`;
+/** @param {unknown} node @returns {string[]} every path string under an `exports` node */
+const exportTargets = (node) =>
+  typeof node === "string"
+    ? [node]
+    : typeof node === "object" && node !== null
+      ? Object.values(node).flatMap(exportTargets)
+      : [];
 
-/** @type {unknown} */
+/** @type {{ exports?: unknown }} */
+const metadata = JSON.parse(readFileSync("package.json", "utf8"));
+const required = new Set([
+  ...DOCS,
+  ...exportTargets(metadata.exports).map((target) => posix.normalize(target)),
+]);
+
+/** @type {[{ files: Array<{ path: string }> }]} */
 const [pack] = JSON.parse(
   execFileSync("npm", ["pack", "--dry-run", "--json", "--ignore-scripts"], {
     encoding: "utf8",
     stdio: ["ignore", "pipe", "inherit"],
   }),
 );
-if (
-  typeof pack !== "object" ||
-  pack === null ||
-  !("files" in pack) ||
-  !Array.isArray(pack.files)
-)
-  throw new Error("unexpected npm pack output");
-const packed = new Set(
-  pack.files.map((/** @type {{ path: string }} */ file) => file.path),
-);
+const packed = new Set(pack.files.map((file) => file.path));
 
 /** @type {string[]} */
 const problems = [];
-for (const path of REQUIRED)
+for (const path of required)
   if (!packed.has(path)) problems.push(`missing from tarball: ${path}`);
 for (const path of packed)
   if (FORBIDDEN.some((pattern) => pattern.test(path)))
@@ -67,13 +57,12 @@ const links = [
   ...readFileSync("llms.txt", "utf8").matchAll(/\]\(([^)\s]+)\)/g),
 ].map((match) => match[1]);
 for (const link of links) {
-  if (link.startsWith(blobPrefix)) {
-    const path = link.slice(blobPrefix.length).split("/").slice(1).join("/");
+  if (link.startsWith(REPO_BLOB)) {
+    const path = link.slice(REPO_BLOB.length).split("/").slice(1).join("/");
     if (packed.has(path))
       problems.push(`llms.txt links shipped ${path} by URL, use ./${path}`);
   } else if (!/^[a-z][a-z\d+.-]*:/i.test(link) && !link.startsWith("#")) {
-    const path = posix.normalize(link.split("#")[0]);
-    if (!packed.has(path))
+    if (!packed.has(posix.normalize(link.split("#")[0])))
       problems.push(`llms.txt link not in tarball: ${link}`);
   }
 }
@@ -83,5 +72,5 @@ if (problems.length > 0) {
   process.exit(1);
 }
 console.log(
-  `OK    package: ${packed.size} files, ${REQUIRED.length} required present, ${links.length} llms.txt links checked`,
+  `OK    package: ${packed.size} files, ${required.size} required present, ${links.length} llms.txt links checked`,
 );
