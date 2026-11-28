@@ -17,9 +17,10 @@ All notable changes to this project are documented here. The format is based on
   bucketing.
 - Rollouts with any non-whole-number weight now split subjects by their weights. Before, weights
   summing to 1 (such as `0.5` / `0.5`) sent every subject to the first split, and other decimal
-  weights (such as `33.3` / `66.7`) only approximated their shares. Such rollouts are re-bucketed
-  once on upgrade, so some of their subjects change value. Rollouts whose weights are all whole
-  numbers bucket exactly as before.
+  weights were rounded to whole-number buckets, so their shares were skewed and a split could get
+  no subjects at all (for example `0.25` / `0.75` / `1` never served its middle split). Such
+  rollouts are re-bucketed once on upgrade, so some of their subjects change value. Rollouts whose
+  weights are all whole numbers bucket exactly as before.
 
 ### Changed
 

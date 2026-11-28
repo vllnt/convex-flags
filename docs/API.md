@@ -109,8 +109,9 @@ when any weight is not a whole number, the hash modulo 1,000,000 is scaled into
 Upgrading from 0.1.0: rollouts whose weights are all whole numbers bucket exactly as
 before. Rollouts with any non-whole-number weight are re-bucketed once, so some of their
 subjects change value. In 0.1.0, weights summing to 1 (such as `0.5` / `0.5`) sent every
-subject to the first split, and other decimal weights (such as `33.3` / `66.7`) only
-approximated their shares.
+subject to the first split, and other decimal weights were rounded to whole-number
+buckets, so their shares were skewed and a split could get no subjects at all (for example
+`0.25` / `0.75` / `1` never served its middle split).
 
 ## Types
 
