@@ -10,7 +10,10 @@
     "sourceMap": true,
     "outDir": "dist",
     "rootDir": "src",
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    // On by default since @vllnt/typescript 3; it changes emitted declarations,
+    // so adopting it is a separate, reviewed change.
+    "exactOptionalPropertyTypes": false
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist"]
