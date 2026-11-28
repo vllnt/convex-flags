@@ -2,5 +2,11 @@
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": ["config:recommended"],
   "ignoreDeps": ["convex"],
-  "minimumReleaseAge": "7 days"
+  "minimumReleaseAge": "7 days",
+  "packageRules": [
+    {
+      "matchPackageNames": ["@vllnt/**"],
+      "minimumReleaseAge": null
+    }
+  ]
 }
