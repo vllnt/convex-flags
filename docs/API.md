@@ -107,12 +107,12 @@ when any weight is not a whole number and the sum is finite, the hash modulo 1,0
 is scaled into `[0, sum)` instead.
 
 Upgrading from 0.1.0: rollouts whose weights are all whole numbers, and rows stored with
-an `Infinity` weight before weights were validated, bucket exactly as before. Rollouts
-with any other non-whole-number weight are re-bucketed once, so some of their subjects
-change value. In 0.1.0 such weights bucketed on a coarse grid set by their sum: weights
-summing to 1 (such as `0.5` / `0.5`) sent every subject to the first split, other sets
-were skewed (`1.5` / `1.5` served about 67% / 33%), and a split could get no subjects at
-all (`0.25` / `0.75` / `1` never served its middle split).
+an `Infinity` weight before weights were validated, bucket exactly as before. Other
+rollouts with a non-whole-number weight are re-bucketed once, so some of their subjects
+change value. In 0.1.0 some of these weights bucketed unevenly: weights summing to 1
+(such as `0.5` / `0.5`) sent every subject to the first split, other sets were skewed
+(`1.5` / `1.5` served about 67% / 33%), and a split could get no subjects at all
+(`0.25` / `0.75` / `1` never served its middle split).
 
 ## Types
 
