@@ -2,8 +2,9 @@
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "types": ["vitest/globals"],
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext"
+    // Type-check only; example/ sits outside the build's rootDir (src).
+    "noEmit": true,
+    "rootDir": "."
   },
   "include": ["src/**/*", "example/**/*"]
 }
