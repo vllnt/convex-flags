@@ -101,11 +101,16 @@ stable subject so a given subject always resolves to the same value:
 
 `by` names the context attribute to bucket by; when omitted,
 `context.subjectRef` is used. Weights are relative to the sum of the positive weights,
-and may be whole numbers (for example percentages) or fractions (`0.5` / `0.5`). When
+and may be whole numbers (for example percentages) or decimals (`0.5` / `0.5`). When
 every weight is a whole number, a subject's bucket is its 32-bit hash modulo that sum;
-when any weight is fractional, the hash modulo 1,000,000 is scaled into `[0, sum)`
-instead. Bucketing for
-whole-number weights is unchanged from 0.1.0, so existing subjects keep their values.
+when any weight is not a whole number, the hash modulo 1,000,000 is scaled into
+`[0, sum)` instead.
+
+Upgrading from 0.1.0: rollouts whose weights are all whole numbers bucket exactly as
+before. Rollouts with any non-whole-number weight are re-bucketed once, so some of their
+subjects change value. In 0.1.0, weights summing to 1 (such as `0.5` / `0.5`) sent every
+subject to the first split, and other decimal weights (such as `33.3` / `66.7`) only
+approximated their shares.
 
 ## Types
 

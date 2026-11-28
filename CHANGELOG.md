@@ -15,11 +15,11 @@ All notable changes to this project are documented here. The format is based on
 - `define` and `update` reject rollout weights (flag-level and rule-level) that are `NaN`,
   infinite or negative with `INVALID_ARGUMENT`; previously they were silently ignored or skewed
   bucketing.
-- Rollouts with fractional weights (for example `0.5` / `0.5`) now split subjects by their
-  weights; previously every subject got the first split. Rollouts whose weights are all whole
-  numbers bucket exactly as before, so no existing subject changes value.
-- The repository's own tests type-check under plain `pnpm typecheck` again, and CI now runs it
-  alongside `typecheck:ci`.
+- Rollouts with any non-whole-number weight now split subjects by their weights. Before, weights
+  summing to 1 (such as `0.5` / `0.5`) sent every subject to the first split, and other decimal
+  weights (such as `33.3` / `66.7`) only approximated their shares. Such rollouts are re-bucketed
+  once on upgrade, so some of their subjects change value. Rollouts whose weights are all whole
+  numbers bucket exactly as before.
 
 ### Changed
 
