@@ -15,8 +15,11 @@ All notable changes to this project are documented here. The format is based on
 - `define` and `update` reject rollout weights (flag-level and rule-level) that are `NaN`,
   infinite or negative with `INVALID_ARGUMENT`; previously they were silently ignored or skewed
   bucketing.
-- `@vllnt/convex-flags/test` now type-checks under `moduleResolution: nodenext` (explicit `.js`
-  relative imports, Vite client types referenced).
+- Rollouts with fractional weights (for example `0.5` / `0.5`) now split subjects by their
+  weights; previously every subject got the first split. Rollouts whose weights are all whole
+  numbers bucket exactly as before, so no existing subject changes value.
+- The repository's own tests type-check under plain `pnpm typecheck` again, and CI now runs it
+  alongside `typecheck:ci`.
 
 ### Changed
 
@@ -24,9 +27,8 @@ All notable changes to this project are documented here. The format is based on
   `setOverride`) skip the write when nothing changed, so idempotent re-defines no longer bump
   `updatedAt` or re-run every `evaluate`/`all` subscription.
 - Upgrade dev tooling (vitest 5.1.1, vite 8.3, convex 1.51, convex-test 0.0.73, prettier 3.10,
-  jsdom 31, `@vllnt/typescript` 3 with `exactOptionalPropertyTypes` kept off), override the
-  vulnerable transitive `handlebars`, `deepmerge-ts` and `minimatch` releases, and drop
-  transitive-dependency overrides the lockfile no longer needs.
+  jsdom 31, `@vllnt/typescript` 3 with `exactOptionalPropertyTypes` kept off), and override the
+  vulnerable transitive `handlebars`, `deepmerge-ts` and `minimatch` releases.
 - Adopt pnpm 10 with a release-age gate; releases are published only from CI with npm trusted
   publishing and provenance.
 - Document the component error codes and how to use `/test` in a consuming app.
