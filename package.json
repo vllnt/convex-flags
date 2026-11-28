@@ -88,10 +88,6 @@
     "vitest": "^5.1.1"
   },
   "pnpm": {
-    "minimumReleaseAge": 10080,
-    "minimumReleaseAgeExclude": [
-      "@vllnt/*"
-    ],
     "ignoredBuiltDependencies": [
       "esbuild"
     ],
