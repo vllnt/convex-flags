@@ -388,15 +388,15 @@ Management methods throw these errors from the component. Reads (`get`, `list`,
 
 | Code               | Message                                                                                                    | Cause                                                                                                                                                                                                   | Fix                                                                         |
 | ------------------ | ---------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
-| `FLAG_NOT_FOUND`   | `FLAG_NOT_FOUND` (a plain `Error`)                                                                         | `update`, `enable`, `disable`, `archive`, `restore`, `remove` or `setOverride` got a key that was never defined, or was removed                                                                         | Call `define` first, or check with `get(ctx, key)`; keys are case-sensitive |
+| `FLAG_NOT_FOUND`   | contains `FLAG_NOT_FOUND` (a plain `Error`)                                                                | `update`, `enable`, `disable`, `archive`, `restore`, `remove` or `setOverride` got a key that was never defined, or was removed                                                                         | Call `define` first, or check with `get(ctx, key)`; keys are case-sensitive |
 | `INVALID_ARGUMENT` | `key must be non-empty`, `subjectRef must be non-empty`, `rollout weights must be finite and non-negative` | A management method got an empty `key`; `setOverride` / `clearOverride` got an empty `subjectRef`; `define` / `update` got a split weight that is `NaN`, infinite or negative (flag-level or in a rule) | Pass non-empty strings; use weights `>= 0` (a `0` weight turns a split off) |
 
 `INVALID_ARGUMENT` is a `ConvexError` whose `data` is `{ code, message }`: read
-`error.data.code`. `FLAG_NOT_FOUND` is a plain `Error`: match `error.message`.
-Convex hides the message of a plain `Error` from clients in production, so catch
-it in your host mutation and rethrow a `ConvexError` if the client must see it.
-Arguments of the wrong type (for example an object as `value`) are rejected by
-Convex argument validation before the component runs.
+`error.data.code`. `FLAG_NOT_FOUND` is a plain `Error` whose message contains
+`FLAG_NOT_FOUND`. Convex hides the message of a plain `Error` from clients in
+production, so catch it in your host mutation and rethrow a `ConvexError` if the
+client must see it. Arguments of the wrong type (for example an object as
+`value`) are rejected by Convex argument validation before the component runs.
 
 ## Limits and gotchas
 
@@ -445,6 +445,14 @@ Convex argument validation before the component runs.
   queries do not re-run.
 - `clearOverride` on a missing override or flag does nothing. `remove` deletes
   the flag's overrides too.
+- `all` (and so `useFlags`) returns an object keyed by flag key, and Convex
+  rejects object field names that start with `$`, contain a character outside
+  printable ASCII (such as `é` or a tab), or are longer than 1024 characters.
+  `define` accepts such a key, and `get` and `evaluate` serve it, but every
+  `all` call then fails while that flag exists, for all flags. Example:
+  `Field name café has invalid character 'é': Field names can only contain non-control ASCII characters`.
+  Use printable ASCII keys of at most 1024 characters that do not start with
+  `$`.
 - `list` and `all` read every flag in one query, with no pagination, so Convex's
   per-query read limits apply to the number of flags.
 - Evaluation is a query and writes nothing: there is no evaluation log, no
@@ -456,9 +464,8 @@ Convex argument validation before the component runs.
   only for `@vllnt/convex-flags/react`). CI runs the unit tests on the locked
   convex version (1.51.0), and type-checks and runs the packed package against
   convex 1.45.0 and React 18.
-- Node.js: `package.json` declares `>=18`, but convex itself requires Node.js
-  `>=20` (convex 1.45 to 1.48) and `>=22` (convex 1.49 and newer). ES modules
-  only.
+- Node.js 20 or newer; convex 1.49 and newer needs Node.js 22 or newer. ES
+  modules only.
 - Runtime: the component's functions are Convex queries and mutations in the
   default Convex runtime, with no actions, crons, HTTP routes or network calls.
   The client methods run in host queries, mutations and actions; the mutation
@@ -531,16 +538,17 @@ example and the `docs/API.md` signatures of `register`, `useFlag` and
   targeting matters.
 - Its `flags` and `overrides` tables are reachable only through the component's
   functions, and it never reads host tables.
-- Flag keys, subject refs and attribute names are opaque strings: the component
-  only rejects empty keys and subject refs.
+- Flag keys, subject refs and attribute names are opaque strings. On writes the
+  component rejects only empty keys and subject refs; it does not check a key's
+  characters or length (see Limits and gotchas for keys that break `all`).
 
 Report vulnerabilities as described in
 [SECURITY.md](https://github.com/vllnt/convex-flags/blob/main/SECURITY.md).
 
 ## Related packages
 
-None. This package has no dependency, shared test or example with another
-package.
+None: no runtime or peer dependency, shared test or example uses another
+`@vllnt` package.
 
 ## Contributing
 

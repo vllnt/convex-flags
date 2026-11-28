@@ -118,7 +118,7 @@
     "url": "https://github.com/vllnt/convex-flags"
   },
   "engines": {
-    "node": ">=18"
+    "node": ">=20"
   },
   "publishConfig": {
     "access": "public"

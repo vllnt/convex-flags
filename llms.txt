@@ -16,9 +16,13 @@ reason `disabled`), targeting rules in order, flag-level rollout, base value.
 Rollouts bucket by the 32-bit FNV-1a hash of `<flag key>:<subject>`, where the
 subject is `subjectRef` or the `by` attribute. An unknown key returns the
 caller `default` (reason `default`) or `false` (reason `unknown`) and never
-throws. Missing flags in management methods throw `Error("FLAG_NOT_FOUND")`;
+throws. `update`, `enable`, `disable`, `archive`, `restore`, `remove` and
+`setOverride` throw a plain `Error` whose message contains `FLAG_NOT_FOUND` for
+a key that does not exist (`define` creates it, `clearOverride` does nothing);
 empty keys or subject refs and `NaN`, infinite or negative weights throw
-`ConvexError` with `data.code` `INVALID_ARGUMENT`. React hooks `useFlag` and
+`ConvexError` with `data.code` `INVALID_ARGUMENT`. `all` fails while any key
+starts with `$`, has a character outside printable ASCII or exceeds 1024
+characters; use printable ASCII keys. React hooks `useFlag` and
 `useFlags` take the host's own public queries. The host owns auth and the
 meaning of keys, subjects and attributes.
 

@@ -165,9 +165,10 @@ function checkConsumer() {
       }),
     );
     // pnpm 11 reads the build-script policy from the workspace file, pnpm 10 from package.json.
+    // The same 7-day release-age gate as the repo: this also runs in the publish jobs.
     writeFileSync(
       join(temporary, "pnpm-workspace.yaml"),
-      "allowBuilds:\n  esbuild: false\n",
+      "allowBuilds:\n  esbuild: false\nminimumReleaseAge: 10080\n",
     );
     run("pnpm", ["add", join(temporary, tarball), ...CONSUMER_DEPENDENCIES]);
     // Agents read the bundled docs from node_modules, so they must ship and resolve.

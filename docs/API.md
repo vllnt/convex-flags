@@ -17,8 +17,17 @@ installed version.
 `./package.json` is exported as-is. A flag value is a typed primitive,
 `boolean | string | number` ([`VariantValue`](#variantvalue)): a boolean flag is
 the two-variant case, string and number flags are multivariate. Flag keys and
-subject refs are opaque host strings; the component only rejects empty ones on
-writes.
+subject refs are opaque host strings. On writes the component rejects only empty
+ones; it does not check a key's characters or length.
+
+Keys that [`all`](#all) cannot return: `all` returns an object keyed by flag
+key, and Convex rejects object field names that start with `$`, contain a
+character outside printable ASCII, or are longer than 1024 characters. `define`
+stores such a key and `get` / `evaluate` serve it, but `all` then fails for
+every flag while it exists, for example with
+`Field name café has invalid character 'é': Field names can only contain non-control ASCII characters`
+or `Field name $beta starts with a '$', which is reserved.` Use printable ASCII
+keys of at most 1024 characters that do not start with `$`.
 
 ## Client
 
@@ -185,7 +194,8 @@ all(ctx, context?: EvalContext): Promise<Record<string, FlagEvaluation>>
 
 Evaluates every defined flag against the same context, keyed by flag key: the
 bootstrap payload for a reactive client. Overrides for `context.subjectRef` are
-applied. Unknown keys are simply absent.
+applied. Unknown keys are simply absent. It throws while any stored key is not a
+valid Convex field name (see [Entry points](#entry-points) for the key rules).
 
 ## Evaluation order
 
@@ -441,7 +451,7 @@ See [Rollouts](#rollouts).
 
 | Code               | Thrown by                                                                                 | Condition                                                                                                    | Message                                                                                                    |
 | ------------------ | ----------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------- |
-| `FLAG_NOT_FOUND`   | `update`, `enable`, `disable`, `archive`, `restore`, `remove`, `setOverride`              | The flag key does not exist                                                                                  | `FLAG_NOT_FOUND`                                                                                           |
+| `FLAG_NOT_FOUND`   | `update`, `enable`, `disable`, `archive`, `restore`, `remove`, `setOverride`              | The flag key does not exist                                                                                  | contains `FLAG_NOT_FOUND`                                                                                  |
 | `INVALID_ARGUMENT` | every mutation (`key`); `setOverride`, `clearOverride` (`subjectRef`); `define`, `update` | `key` or `subjectRef` is empty, or a rollout weight (flag-level or in a rule) is `NaN`, infinite or negative | `key must be non-empty`, `subjectRef must be non-empty`, `rollout weights must be finite and non-negative` |
 
 `FLAG_NOT_FOUND` is a plain JavaScript `Error("FLAG_NOT_FOUND")`, not a
