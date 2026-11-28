@@ -107,7 +107,7 @@ is_denied_class() {
   case "$base" in
     *.test.ts|*.test.tsx|*.test.js|*.test.mjs|*.test.cjs|*.test.mts|*.test.cts|*.test.jsx)
       return 0 ;;
-    *.spec.ts|*.spec.tsx|*.spec.js|*.spec.mjs|*.spec.cjs|*.spec.jsx)
+    *.spec.ts|*.spec.tsx|*.spec.js|*.spec.mjs|*.spec.cjs|*.spec.mts|*.spec.cts|*.spec.jsx)
       return 0 ;;
     .env|.env.*)
       return 0 ;;
