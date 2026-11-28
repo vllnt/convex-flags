@@ -48,6 +48,21 @@ describe("rollout weights", () => {
     expect(counts.get("z")).toBeLessThanOrEqual(750);
   });
 
+  test("legacy Infinity weights bucket as in 0.1.0", () => {
+    // 0.1.0 stored non-finite weights; pinned from its engine so such rows keep serving.
+    const tail = [
+      { value: "a", weight: 1 },
+      { value: "b", weight: Infinity },
+    ];
+    const head = [
+      { value: "a", weight: Infinity },
+      { value: "b", weight: 1 },
+    ];
+    for (const subject of ["u1", "u2", "u3", "alice", "bob"]) {
+      expect([pickSplit("inf", subject, tail), pickSplit("inf", subject, head)]).toEqual(["b", "a"]);
+    }
+  });
+
   test("integer-weight assignments are unchanged (no re-bucketing)", () => {
     // Pinned from the 0.1.0 engine (`hash % total`); a change here re-buckets live users.
     const even = [
