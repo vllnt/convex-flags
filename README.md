@@ -445,16 +445,20 @@ client must see it. Arguments of the wrong type (for example an object as
   queries do not re-run.
 - `clearOverride` on a missing override or flag does nothing. `remove` deletes
   the flag's overrides too.
-- `all` (and so `useFlags`) returns an object keyed by flag key, and Convex
-  rejects object field names that start with `$`, contain a character outside
+- `all` (and so `useFlags`) returns a record keyed by flag key, and Convex
+  rejects record keys that start with `$` or `_`, contain a character outside
   printable ASCII (such as `é` or a tab), or are longer than 1024 characters.
   `define` accepts such a key, and `get` and `evaluate` serve it, but every
   `all` call then fails while that flag exists, for all flags. Example:
   `Field name café has invalid character 'é': Field names can only contain non-control ASCII characters`.
-  Use printable ASCII keys of at most 1024 characters that do not start with
-  `$`.
-- `list` and `all` read every flag in one query, with no pagination, so Convex's
-  per-query read limits apply to the number of flags.
+  The `$`, non-ASCII, control-character and length cases were reproduced in
+  `convex-test`; the `_` rule is Convex's documented record-key rule and was not
+  reproduced there. Use printable ASCII keys of at most 1024 characters that do
+  not start with `$` or `_`.
+- `all` returns one field per flag, and Convex limits an object to 1024 fields,
+  so with more than 1024 flags `all` and `useFlags` fail (Convex's documented
+  limit, not tested here). Use `evaluate` per key for larger sets. `list` and
+  `all` also read every flag in one query, with no pagination.
 - Evaluation is a query and writes nothing: there is no evaluation log, no
   stale-flag detection and no change history.
 

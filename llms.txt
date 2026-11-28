@@ -20,9 +20,12 @@ throws. `update`, `enable`, `disable`, `archive`, `restore`, `remove` and
 `setOverride` throw a plain `Error` whose message contains `FLAG_NOT_FOUND` for
 a key that does not exist (`define` creates it, `clearOverride` does nothing);
 empty keys or subject refs and `NaN`, infinite or negative weights throw
-`ConvexError` with `data.code` `INVALID_ARGUMENT`. `all` fails while any key
-starts with `$`, has a character outside printable ASCII or exceeds 1024
-characters; use printable ASCII keys. React hooks `useFlag` and
+`ConvexError` with `data.code` `INVALID_ARGUMENT`. `all` returns a record keyed
+by flag key, so it fails while any key starts with `$` or `_`, has a character
+outside printable ASCII or exceeds 1024 characters, and (Convex's documented
+1024-fields-per-object limit) when there are more than 1024 flags; use printable
+ASCII keys of at most 1024 characters not starting with `$` or `_`, and
+`evaluate` per key for larger sets. React hooks `useFlag` and
 `useFlags` take the host's own public queries. The host owns auth and the
 meaning of keys, subjects and attributes.
 

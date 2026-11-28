@@ -20,14 +20,18 @@ the two-variant case, string and number flags are multivariate. Flag keys and
 subject refs are opaque host strings. On writes the component rejects only empty
 ones; it does not check a key's characters or length.
 
-Keys that [`all`](#all) cannot return: `all` returns an object keyed by flag
-key, and Convex rejects object field names that start with `$`, contain a
-character outside printable ASCII, or are longer than 1024 characters. `define`
-stores such a key and `get` / `evaluate` serve it, but `all` then fails for
-every flag while it exists, for example with
+Keys that [`all`](#all) cannot return: `all` returns a record keyed by flag key,
+and Convex rejects record keys that start with `$` or `_`, contain a character
+outside printable ASCII, or are longer than 1024 characters. `define` stores
+such a key and `get` / `evaluate` serve it, but `all` then fails for every flag
+while it exists, for example with
 `Field name café has invalid character 'é': Field names can only contain non-control ASCII characters`
-or `Field name $beta starts with a '$', which is reserved.` Use printable ASCII
-keys of at most 1024 characters that do not start with `$`.
+or `Field name $beta starts with a '$', which is reserved.` The `$`, non-ASCII,
+control-character and length cases were reproduced in `convex-test`; the `_`
+rule is Convex's documented record-key rule (`v.record`: "Keys must be ASCII
+characters only, non-empty, and not start with `$` or `_`") and was not
+reproduced there. Use printable ASCII keys of at most 1024 characters that do
+not start with `$` or `_`.
 
 ## Client
 
@@ -195,7 +199,13 @@ all(ctx, context?: EvalContext): Promise<Record<string, FlagEvaluation>>
 Evaluates every defined flag against the same context, keyed by flag key: the
 bootstrap payload for a reactive client. Overrides for `context.subjectRef` are
 applied. Unknown keys are simply absent. It throws while any stored key is not a
-valid Convex field name (see [Entry points](#entry-points) for the key rules).
+valid Convex record key (see [Entry points](#entry-points) for the key rules).
+
+`all` returns one field per flag, and Convex limits an object to 1024 fields
+(including return values), so with more than 1024 flags `all` and `useFlags`
+fail. This is Convex's documented limit and is not tested here. Use `evaluate`
+per key for larger sets. `all` reads every flag in one query, with no
+pagination.
 
 ## Evaluation order
 
