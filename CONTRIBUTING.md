@@ -8,9 +8,15 @@ Thanks for your interest in contributing!
 pnpm install
 pnpm build
 pnpm typecheck
+pnpm typecheck:test
 pnpm lint
 pnpm test:coverage
+pnpm test:package
 ```
+
+`pnpm test:package` (after `pnpm build`) installs the packed tarball in a temporary app, checks the
+docs contract in `scripts/check-documentation.mjs`, type-checks the README examples and runs the
+README test example.
 
 Use `pnpm build:codegen` only when you need to regenerate checked-in Convex `_generated` files and
 have access to the selected Convex project.
@@ -42,7 +48,7 @@ at least one adversarial test (auth-denied, invalid input, boundary).
 - Target `main`
 - One logical change per PR
 - Include tests for new behavior or bug fixes
-- Ensure all checks pass: `pnpm typecheck && pnpm lint && pnpm test:coverage && pnpm build`
+- Ensure all checks pass: `pnpm typecheck && pnpm typecheck:test && pnpm lint && pnpm test:coverage && pnpm build && pnpm test:package`
 
 ## Releases
 

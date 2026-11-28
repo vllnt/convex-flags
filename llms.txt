@@ -1,39 +1,67 @@
 # @vllnt/convex-flags
 
-> Feature flags as a Convex component — variants, targeting, percentage rollouts, and per-subject overrides, evaluated on the backend and streamed live to clients.
+> Convex component for feature flags in TypeScript: kill switches, variants, attribute targeting, percentage rollouts, per-subject overrides and React hooks.
 
-`@vllnt/convex-flags` is a publishable Convex component targeting `convex@^1.45.0`.
-It stores feature flags in its own sandboxed tables, keyed by an opaque host-chosen
-string. A flag value is a typed primitive (`boolean | string | number`) and supports
-attribute-targeting rules, weighted percentage rollouts with stable per-subject
-bucketing, per-subject overrides, and reversible archiving. Flags are evaluated inside
-Convex queries, so changes stream to connected clients over the same reactive
-subscription mechanism as app data. The host owns auth and gates every management call.
-An optional `./react` entry ships `useFlag`/`useFlags` hooks; `react` is an optional peer.
+Install `@vllnt/convex-flags` (unreleased builds from `main` use the `canary`
+dist-tag). Peer dependency `convex@^1.45.0`; `react@^18.0.0 || ^19.0.0` is
+optional and only needed for `@vllnt/convex-flags/react`. Mount it with
+`app.use(flags)` from `@vllnt/convex-flags/convex.config` and call it through
+`new Flags(components.flags)` from host queries, mutations and actions.
+Management methods: `define` (full replace), `update` (partial), `enable`,
+`disable`, `archive`, `restore`, `remove`, `setOverride`, `clearOverride`.
+Read methods: `get`, `list`, `evaluate`, `variant`, `isEnabled`, `all`. A flag
+is keyed by an opaque host string and its value is `boolean | string | number`.
+Evaluation order: per-subject override, archived (serves the base value with
+reason `disabled`), targeting rules in order, flag-level rollout, base value.
+Rollouts bucket by the 32-bit FNV-1a hash of `<flag key>:<subject>`, where the
+subject is `subjectRef` or the `by` attribute. An unknown key returns the
+caller `default` (reason `default`) or `false` (reason `unknown`) and never
+throws. Missing flags in management methods throw `Error("FLAG_NOT_FOUND")`;
+empty keys or subject refs and `NaN`, infinite or negative weights throw
+`ConvexError` with `data.code` `INVALID_ARGUMENT`. React hooks `useFlag` and
+`useFlags` take the host's own public queries. The host owns auth and the
+meaning of keys, subjects and attributes.
+
+## When to use
+
+- Use it when a Convex app needs on/off switches it can flip without a deploy.
+- Use it when a feature goes to a percentage of users, or to users whose
+  attributes match rules, and each user must keep the same value.
+- Use it when clients must see a flag change live through a Convex query.
+- Do not use it when you run an A/B experiment and need sticky assignments and
+  exposure counts per variant: use `@vllnt/convex-experiments`.
+- Do not use it when you need to measure what a flagged feature did (events,
+  funnels, retention): use `@vllnt/convex-analytics`.
 
 ## For coding agents
 
-The docs are bundled in the package at `node_modules/@vllnt/convex-flags/docs/` (this file,
-`README.md` and `CHANGELOG.md` sit at the package root) and match the installed version. Read
-them before writing code against this package.
+The docs are bundled in the package at `node_modules/@vllnt/convex-flags/docs/`
+and match the installed version. Read them, and the shipped `src/`, before
+writing code. The links below to `./` paths are files inside the installed package.
 
 ## Docs
 
-- [README](./README.md): Project overview, installation, usage examples, architecture
-- [API Reference](./docs/API.md): Public class methods, return shapes, input validation
+- [README](./README.md): Install, quick start, common tasks, limits
+- [API Reference](./docs/API.md): Every export, signature, return shape and validation rule
+- [Errors and fixes](./README.md#errors-and-fixes): Every error code, its cause and the fix
 - [Changelog](./CHANGELOG.md): Version history and release notes
 - [License](./LICENSE): MIT license
 
-## Ecosystem
-
-- [vllnt oss](https://oss.vllnt.com/llms.txt): Index of the other vllnt open-source packages
-
 ## Optional
 
-These files are on GitHub and are not bundled in the package.
+Repository files, not bundled in the package; they track `main`.
 
 - [Example component wrapper](https://github.com/vllnt/convex-flags/blob/main/example/convex/example.ts): Host-app wrapper functions
-- [Example tests](https://github.com/vllnt/convex-flags/blob/main/example/convex/example.test.ts): End-to-end usage coverage with `convex-test`
+- [Example tests](https://github.com/vllnt/convex-flags/blob/main/example/convex/example.test.ts): Simulated usage coverage with `convex-test`
 - [Contributing](https://github.com/vllnt/convex-flags/blob/main/CONTRIBUTING.md): Development setup, validation commands, release workflow
 - [Security Policy](https://github.com/vllnt/convex-flags/blob/main/SECURITY.md): Vulnerability reporting policy
 - [Code of Conduct](https://github.com/vllnt/convex-flags/blob/main/CODE_OF_CONDUCT.md): Community participation guidelines
+
+## Ecosystem
+
+- [Package page](https://oss.vllnt.com/packages/convex-flags)
+- [Release feed](https://oss.vllnt.com/packages/convex-flags/rss.xml)
+- [All @vllnt packages](https://oss.vllnt.com/llms.txt)
+- [Search vllnt packages and docs](https://index.vllnt.com)
+- [vllnt](https://vllnt.com/llms.txt)
+- [Author](https://bntvllnt.com)
