@@ -3,5 +3,10 @@
   "functions": "example/convex",
   "codegen": {
     "legacyComponentApi": false
+  },
+  "aiFiles": {
+    "skills": {
+      "agents": []
+    }
   }
 }
