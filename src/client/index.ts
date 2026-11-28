@@ -110,6 +110,8 @@ interface RunMutationCtx {
  * const flags = new Flags(components.flags);
  * if (await flags.isEnabled(ctx, "new-checkout", { subjectRef: userId })) { ... }
  * ```
+ *
+ * @see https://oss.vllnt.com/packages/convex-flags
  */
 export class Flags {
   constructor(private readonly component: FlagsComponent) {}

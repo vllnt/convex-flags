@@ -42,6 +42,15 @@ All notable changes to this project are documented here. The format is based on
   how a rollout that cannot bucket inside a matched rule falls back to the flag value.
 - Canary builds publish on every qualifying push to `main` (dist-tag `canary` only, never
   `latest`), including docs-only changes to the shipped files.
+- `engines.node` is now `>=20`, matching what `convex` itself requires (no `convex` version in
+  the peer range supports Node 18).
+- README rewritten in a fixed, agent-first order (when to use, install, quick start, an API table
+  linking every export and `Flags` method to `docs/API.md`, common tasks, every error code with its
+  fix, limits and gotchas, compatibility), with one `docs/API.md` heading per export, a
+  "When to use" section and the errors link in `llms.txt`, and a shorter `package.json`
+  description and keywords; `pnpm test:package` now installs the packed tarball in a temporary app,
+  checks this docs contract (`scripts/check-documentation.mjs`), type-checks the README examples
+  against convex 1.45.0 and React 18 and runs the README test example.
 
 ## [0.1.0] - 2026-09-01
 
