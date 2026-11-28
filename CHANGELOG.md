@@ -18,9 +18,10 @@ All notable changes to this project are documented here. The format is based on
 - Rollouts with a non-whole-number weight now split subjects by their weights. In 0.1.0 some of
   these weights bucketed unevenly: weights summing to 1 (such as `0.5` / `0.5`) sent every subject
   to the first split, other sets were skewed (`1.5` / `1.5` served about 67% / 33%), and a split
-  could get no subjects at all (`0.25` / `0.75` / `1` never served its middle split). These rollouts are re-bucketed once on upgrade, so some of their subjects change value.
-  Rollouts whose weights are all whole numbers, and rows stored with an `Infinity` weight before
-  weights were validated, bucket exactly as before.
+  could get no subjects at all (`0.25` / `0.75` / `1` never served its middle split). These
+  rollouts are re-bucketed once on upgrade, so some of their subjects change value. Rollouts whose
+  weights are all whole numbers, and rows stored with an `Infinity` weight before weights were
+  validated, bucket exactly as before.
 
 ### Changed
 
