@@ -165,9 +165,22 @@ export function hashString(input: string): number {
   return hash >>> 0;
 }
 
+/** Bucket count used when a rollout has a fractional weight. */
+const FRACTIONAL_RESOLUTION = 1_000_000;
+
 /**
  * Deterministically pick a split's value by hashing `flagKey:subject` across the
  * cumulative weights. Returns `null` when no split has positive weight.
+ *
+ * All-integer weights bucket by `hash % total` (the original scheme, kept so
+ * existing assignments never move). An infinite total, from a legacy `Infinity`
+ * weight stored before weights were validated, also takes that path, even beside
+ * a decimal weight, so it keeps its 0.1.0 result. Otherwise any fractional
+ * weight maps the hash to one of `FRACTIONAL_RESOLUTION` slots scaled into
+ * `[0, total)` instead: `hash % total` would send every subject to the first
+ * split when, say, `0.5 + 0.5` sums to `1`.
+ * A modulo (not `hash / 2 ** 32`) keeps subjects that differ only in their last
+ * characters spread out, as FNV-1a's high bits barely move for them.
  */
 export function pickSplit(
   flagKey: string,
@@ -179,7 +192,12 @@ export function pickSplit(
   if (total === 0) {
     return null;
   }
-  const point = hashString(`${flagKey}:${subject}`) % total;
+  const hash = hashString(`${flagKey}:${subject}`);
+  const integral =
+    !Number.isFinite(total) || positive.every((split) => Number.isInteger(split.weight));
+  const point = integral
+    ? hash % total
+    : ((hash % FRACTIONAL_RESOLUTION) / FRACTIONAL_RESOLUTION) * total;
   let cumulative = 0;
   let chosen: VariantValue | null = null;
   for (const split of positive) {

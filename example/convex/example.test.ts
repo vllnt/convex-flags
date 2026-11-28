@@ -298,6 +298,30 @@ describe("rollouts", () => {
     expect(again.value).toBe(lastForU3);
   });
 
+  test("fractional weights 0.5 / 0.5 serve both values", async () => {
+    const t = setup();
+    await t.mutation(api.example.define, {
+      key: "frac",
+      value: "BASE",
+      rollout: {
+        splits: [
+          { value: "A", weight: 0.5 },
+          { value: "B", weight: 0.5 },
+        ],
+      },
+    });
+    const seen = new Set<unknown>();
+    for (let i = 0; i < 30; i++) {
+      const r = await t.query(api.example.evaluate, {
+        key: "frac",
+        context: { subjectRef: `u${i}` },
+      });
+      expect(r.reason).toBe("rollout");
+      seen.add(r.value);
+    }
+    expect(seen).toEqual(new Set(["A", "B"]));
+  });
+
   test("rollout with no bucketing subject falls through to the flag value", async () => {
     const t = setup();
     await t.mutation(api.example.define, {

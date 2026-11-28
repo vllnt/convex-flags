@@ -100,10 +100,19 @@ stable subject so a given subject always resolves to the same value:
 ```
 
 `by` names the context attribute to bucket by; when omitted,
-`context.subjectRef` is used. Weights are relative: a subject's bucket is its integer
-hash modulo the sum of the positive weights, so use whole-number weights
-(for example percentages). Fractional weights do not split evenly; `0.5` / `0.5`
-sends every subject to the first split.
+`context.subjectRef` is used. Weights are relative to the sum of the positive weights,
+and may be whole numbers (for example percentages) or decimals (`0.5` / `0.5`). When
+every weight is a whole number, a subject's bucket is its 32-bit hash modulo that sum;
+when any weight is not a whole number and the sum is finite, the hash modulo 1,000,000
+is scaled into `[0, sum)` instead.
+
+Upgrading from 0.1.0: rollouts whose weights are all whole numbers, and rows stored with
+an `Infinity` weight before weights were validated, bucket exactly as before. Other
+rollouts with a non-whole-number weight are re-bucketed once, so some of their subjects
+change value. In 0.1.0 some of these weights bucketed unevenly: weights summing to 1
+(such as `0.5` / `0.5`) sent every subject to the first split, other sets were skewed
+(`1.5` / `1.5` served about 67% / 33%), and a split could get no subjects at all
+(`0.25` / `0.75` / `1` never served its middle split).
 
 ## Types
 

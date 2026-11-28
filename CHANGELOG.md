@@ -15,8 +15,13 @@ All notable changes to this project are documented here. The format is based on
 - `define` and `update` reject rollout weights (flag-level and rule-level) that are `NaN`,
   infinite or negative with `INVALID_ARGUMENT`; previously they were silently ignored or skewed
   bucketing.
-- `@vllnt/convex-flags/test` now type-checks under `moduleResolution: nodenext` (explicit `.js`
-  relative imports, Vite client types referenced).
+- Rollouts with a non-whole-number weight now split subjects by their weights. In 0.1.0 some of
+  these weights bucketed unevenly: weights summing to 1 (such as `0.5` / `0.5`) sent every subject
+  to the first split, other sets were skewed (`1.5` / `1.5` served about 67% / 33%), and a split
+  could get no subjects at all (`0.25` / `0.75` / `1` never served its middle split). These
+  rollouts are re-bucketed once on upgrade, so some of their subjects change value. Rollouts whose
+  weights are all whole numbers, and rows stored with an `Infinity` weight before weights were
+  validated, bucket exactly as before.
 
 ### Changed
 
@@ -24,9 +29,8 @@ All notable changes to this project are documented here. The format is based on
   `setOverride`) skip the write when nothing changed, so idempotent re-defines no longer bump
   `updatedAt` or re-run every `evaluate`/`all` subscription.
 - Upgrade dev tooling (vitest 5.1.1, vite 8.3, convex 1.51, convex-test 0.0.73, prettier 3.10,
-  jsdom 31, `@vllnt/typescript` 3 with `exactOptionalPropertyTypes` kept off), override the
-  vulnerable transitive `handlebars`, `deepmerge-ts` and `minimatch` releases, and drop
-  transitive-dependency overrides the lockfile no longer needs.
+  jsdom 31, `@vllnt/typescript` 3 with `exactOptionalPropertyTypes` kept off), and override the
+  vulnerable transitive `handlebars`, `deepmerge-ts` and `minimatch` releases.
 - Adopt pnpm 10 with a release-age gate; releases are published only from CI with npm trusted
   publishing and provenance.
 - Document the component error codes and how to use `/test` in a consuming app.

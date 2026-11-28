@@ -29,11 +29,11 @@ vi.mock("./component/_generated/server.js", async (importOriginal) => {
   }
   const mutation: typeof original.mutation = (definition) => {
     if (typeof definition === "function") {
-      return original.mutation((ctx, args) => definition({ ...ctx, db: countingDb(ctx.db) }, args));
+      return original.mutation((ctx, ...args) => definition({ ...ctx, db: countingDb(ctx.db) }, ...args));
     }
     return original.mutation({
       ...definition,
-      handler: (ctx, args) => definition.handler({ ...ctx, db: countingDb(ctx.db) }, args),
+      handler: (ctx, ...args) => definition.handler({ ...ctx, db: countingDb(ctx.db) }, ...args),
     });
   };
   return { ...original, mutation };
@@ -48,12 +48,11 @@ function setup() {
   return convexTest(schema, modules);
 }
 
-const RULES = [
-  {
-    conditions: [{ attribute: "plan", op: "in" as const, values: ["pro", "team"] }],
-    rollout: { splits: [{ value: true, weight: 1 }], by: "org" },
-  },
-];
+const RULE = {
+  conditions: [{ attribute: "plan", op: "in" as const, values: ["pro", "team"] }],
+  rollout: { splits: [{ value: true, weight: 1 }], by: "org" },
+};
+const RULES = [RULE];
 
 async function updatedAt(t: ReturnType<typeof setup>, key: string): Promise<number | undefined> {
   return (await t.query(api.queries.get, { key }))?.updatedAt;
@@ -117,7 +116,7 @@ describe("flags component — no-op writes are skipped", () => {
     await t.mutation(api.mutations.archive, { key: "f" });
     expect(await t.query(api.queries.get, { key: "f" })).toMatchObject({ status: "archived", updatedAt: archivedAt });
     expect(archivedAt).toBeLessThan(3000);
-    await t.mutation(api.mutations.update, { key: "f", rules: [RULES[0], RULES[0]] });
+    await t.mutation(api.mutations.update, { key: "f", rules: [RULE, RULE] });
     expect(await updatedAt(t, "f")).toBeGreaterThanOrEqual(3000);
   });
 
