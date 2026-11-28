@@ -58,8 +58,18 @@ describe("rollout weights", () => {
       { value: "a", weight: Infinity },
       { value: "b", weight: 1 },
     ];
+    const headWithDecimal = [
+      { value: "a", weight: Infinity },
+      { value: "b", weight: 0.5 },
+    ];
+    const tailWithDecimal = [
+      { value: "a", weight: 0.5 },
+      { value: "b", weight: Infinity },
+    ];
     for (const subject of ["u1", "u2", "u3", "alice", "bob"]) {
-      expect([pickSplit("inf", subject, tail), pickSplit("inf", subject, head)]).toEqual(["b", "a"]);
+      expect(
+        [tail, head, headWithDecimal, tailWithDecimal].map((splits) => pickSplit("inf", subject, splits)),
+      ).toEqual(["b", "a", "a", "b"]);
     }
   });
 
